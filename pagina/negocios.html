@@ -1,77 +1,106 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Negocios</title>
-    <link rel="icon" type="image/png" href="imagenes/LogoPropuesta.png">
-    <script src="https://cdn.tailwindcss.com"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Negocios</title>
+  <link rel="icon" type="image/png" href="imagenes/logo.png">
+  <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <nav class="bg-gray-900">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div class="flex h-16 items-center justify-between">
-                <div class="flex items-center">
-                    <div class="shrink-0">
-                        <img src="imagenes/LogoPropuesta.png" class="h-8 w-auto"/>
-                    </div>
-                    <div class="hidden md:block">
-                        <div class="ml-10 flex items-baseline space-x-4">
-                            <a href="index.html" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/9 hover:text-white">Inicio</a>
-                            <a href="equipo.html" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/9 hover:text-white">Equipo</a>
-                            <!--
-                            <a href="#negocios" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/9 hover:text-white">Negocios</a>
-                            <a href="#mision" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/9 hover:text-white">Misión</a>
-                            <a href="#vision" class="rounded-md px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/9 hover:text-white">Visión</a>
-                            -->
-                        </div>
-                    </div>
-                </div>
-            </div>
+<body class="bg-gray-100 text-gray-800 flex flex-col min-h-screen">
+
+  <!-- Header / Navbar -->
+  <header class="bg-gray-900 shadow-lg">
+    <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+      <div class="flex h-16 items-center justify-between">
+        <!-- Logo -->
+        <div class="flex items-center gap-2">
+          <img src="imagenes/logo.png" class="size-8" alt="Logo">
+          <span class="text-gray-100 font-bold text-lg">Gestión de Negocios</span>
         </div>
+        <!-- Menú -->
+        <div class="hidden md:flex space-x-4">
+          <a href="index.html" class="px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white rounded-md">Inicio</a>
+          <a href="equipo.html" class="px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white rounded-md">Equipo</a>
+          <a href="#negocios" class="px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white rounded-md">Negocios</a>
+          <a href="#mision" class="px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white rounded-md">Misión</a>
+          <a href="#vision" class="px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white rounded-md">Visión</a>
+          <a href="#recursos-humanos" class="px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white rounded-md">Recursos Humanos</a>
+          <a href="#ambiente-trabajo" class="px-3 py-2 text-sm font-medium text-gray-300 hover:bg-white/10 hover:text-white rounded-md">Ambiente</a>
+        </div>
+      </div>
     </nav>
+  </header>
 
-    <main class="flex flex-col items-center justify-center min-h-screen bg-gray-100 space-y-8 p-4">
-        <!-- Sección de Negocios -->
-        <div id="negocios" class="text-center bg-white shadow-md rounded-lg p-8">
-            <h1 class="text-4xl font-bold mb-4">Gestión de Negocios</h1>
-            <h2 class="text-2xl font-bold mb-6">Negocios</h2>
-            <ul class="list-disc list-inside text-lg text-gray-700">
-                <li><a href="#negocio-web">Negocio Web</a> (en desarrollo)</li>
-            </ul>
-        </div>
+  <!-- Contenido principal -->
+  <main class="flex-1 container mx-auto px-6 py-10">
+    <!-- Título principal -->
+    <div class="text-center mb-12">
+      <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800">Gestión de Negocios</h1>
+      <p class="mt-3 text-lg text-gray-600">Creación de la página basada en el modelo MoProSoft</p>
+    </div>
 
-        <!-- Sección de Administración de Negocios Específicos -->
-        <div class="text-center bg-white shadow-md rounded-lg p-8">
-            <h1 class="text-4xl font-bold mb-4">Administración de Negocios Específicos</h1>
-            <h2 class="text-2xl font-bold mb-6">Actividades de Negocios en Desarrollo</h2>
-            <ul class="flex flex-col gap-4">
-                <li>
-                    <h3 id="negocio-web" class="text-xl font-semibold mb-2">Negocio Web</h3>
-                    <ul class="list-disc list-inside mt-2 text-gray-700">
-                        <li></li>
-                        <li></li>
-                        <li></li>
-                    </ul>
-                </li>
-            </ul>
-        </div>
+    <!-- Grid de secciones -->
+    <div class="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+      <!-- Negocios -->
+      <section id="negocios" class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Negocios</h2>
+        <ul class="list-disc list-inside text-gray-700 space-y-2">
+          <li><a href="#negocio-web" class="text-blue-600 hover:underline">Negocio Web</a> (en desarrollo)</li>
+        </ul>
+      </section>
 
-        <!-- Sección de Misión -->
-        <div id="mision" class="text-center bg-white shadow-md rounded-lg p-8">
-            <h1 class="text-4xl font-bold mb-4">Misión</h1>
-            <p class="text-lg text-gray-700">
-                Nuestra misión es 
-            </p>
-        </div>
+      <!-- Administración -->
+      <section class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Administración</h2>
+        <p class="text-gray-700 mb-3">Actividades en desarrollo:</p>
+        <ul class="list-disc list-inside text-gray-700 space-y-2">
+          <li id="negocio-web">Diseño de interfaz en desarrollo</li>
+          <li>Página de inicio en construcción</li>
+          <li>Pruebas de funcionalidad</li>
+        </ul>
+      </section>
 
-        <!-- Sección de Visión -->
-        <div id="vision" class="text-center bg-white shadow-md rounded-lg p-8">
-            <h1 class="text-4xl font-bold mb-4">Visión</h1>
-            <p class="text-lg text-gray-700">
-                Nuestra visión es
-            </p>
-        </div>
-    </main>
+      <!-- Misión -->
+      <section id="mision" class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Misión</h2>
+        <p class="text-gray-700 leading-relaxed">
+          Nuestra misión es 
+        </p>
+      </section>
+
+      <!-- Visión -->
+      <section id="vision" class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Visión</h2>
+        <p class="text-gray-700 leading-relaxed">
+          Nuestra visión es 
+        </p>
+      </section>
+
+      <!-- Recursos Humanos -->
+      <section id="recursos-humanos" class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Recursos Humanos</h2>
+        <p class="text-gray-700 leading-relaxed">
+          
+        </p>
+      </section>
+
+      <!-- Ambiente de Trabajo -->
+      <section id="ambiente-trabajo" class="bg-white rounded-lg shadow-md p-8 hover:shadow-lg transition">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">Ambiente de Trabajo</h2>
+        <p class="text-gray-700 leading-relaxed">
+          
+        </p>
+      </section>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-gray-900 text-gray-300 py-6 mt-10">
+    <div class="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
+    
+      </div>
+    </div>
+  </footer>
 </body>
 </html>
