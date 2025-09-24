@@ -71,7 +71,7 @@ fun CalendarMockupScreen() {
         daysOfMonth[14] to listOf("Tarea 5")                 // dia 15
     )
     
-    val columns = if (isPortrait()) 4 else 7
+    val columns = 7 //if (isPortrait()) 4 else 7
     var showTaskDialog by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf("") }
 
