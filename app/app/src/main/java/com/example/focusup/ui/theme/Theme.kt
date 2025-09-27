@@ -10,17 +10,29 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
+import com.example.focusup.ui.theme.Yellow1
 
 private val DarkColorScheme = darkColorScheme(
+    /*
     primary = Purple80,
     secondary = PurpleGrey80,
     tertiary = Pink80
+    */
+    primary = Yellow2,
+    secondary = Blue2,
+    background = LightYellow2
 )
 
 private val LightColorScheme = lightColorScheme(
+    /*
     primary = Purple40,
     secondary = PurpleGrey40,
     tertiary = Pink40
+    */
+    surfaceVariant = Yellow1,
+    secondary = Yellow1,
+    primary = Blue1,
+    background = LightYellow
 
     /* Other default colors to override
     background = Color(0xFFFFFBFE),
@@ -40,6 +52,7 @@ fun FocusUpTheme(
     dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
+    /*
     val colorScheme = when {
         dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
             val context = LocalContext.current
@@ -49,6 +62,8 @@ fun FocusUpTheme(
         darkTheme -> DarkColorScheme
         else -> LightColorScheme
     }
+    */
+    val colorScheme = LightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
