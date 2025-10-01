@@ -12,6 +12,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -30,16 +31,26 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.Surface
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Locale
 import java.time.format.DateTimeFormatter
+import java.time.LocalTime
 
 import com.example.focusup.model.Task
 
+
+val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
+val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+
+@RequiresApi(Build.VERSION_CODES.O)
+val tasksList = mutableStateListOf<Task>().apply { addAll(getTasksList()) }
 
 @Composable
 fun isPortrait(): Boolean {
@@ -83,13 +94,7 @@ fun CalendarMockupScreen() {
     val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "ES"))
     val monthName = currentMonth.format(monthFormatter)
 
-    val tasks = listOf(
-        Task("Tarea 1", "Descripcion de la tarea 1", LocalDate.now(), java.time.LocalTime.of(14, 0), 3, listOf("Paso 1", "Paso 2")),
-        Task("Lectura 1", "Descripcion de la lectura 1", LocalDate.now().plusDays(1), java.time.LocalTime.of(16, 0), 2),
-        Task("Tarea 2", "Descripcion de la tarea 2", LocalDate.now().plusDays(2), java.time.LocalTime.of(10, 0), 4),
-        Task("Proyecto", "Descripcion del proyecto", LocalDate.now().plusDays(4), java.time.LocalTime.of(23, 59), 5),
-        Task("Tarea 5", "Descripcion de la tarea 5", LocalDate.now().plusDays(14), java.time.LocalTime.of(12, 0), 1)
-    )
+    val tasks = tasksList
 
     val tasksByDay: Map<LocalDate, List<Task>> =
     daysOfMonth.associateWith { day ->
@@ -108,11 +113,27 @@ fun CalendarMockupScreen() {
             TopAppBar(
                 title = { Text("FocusUp - Calendario", fontWeight = FontWeight.Bold) },
                 actions = {
-                    TextButton(onClick = { /* TODO: cerrar sesion */ }) {
-                        Text("Cerrar sesion")
+                    TextButton(onClick = { /* TODO: perfil */ }) {
+                        Text("Perfil", color = Color.White)
                     }
-                }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Black,
+                    titleContentColor = Color.White,
+                    actionIconContentColor = Color.White
+                )
             )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .padding(12.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("© 2025 FocusUp - Mockup", style = MaterialTheme.typography.bodySmall)
+            }
         }
     ) { innerPadding ->
         Column(
@@ -186,23 +207,42 @@ fun CalendarMockupScreen() {
                                 Spacer(modifier = Modifier.height(4.dp))
 
                                 // Mostrar tareas si existen
-                                val tasks = tasksByDay[date] ?: emptyList()
-                                tasks.forEach { task ->
-                                    Surface(
-                                        tonalElevation = 0.dp,
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = MaterialTheme.colorScheme.secondary,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(vertical = 2.dp)
-                                            .clickable {
-                                                selectedTask = task
-                                                showTaskDialog = true
+                                val tasksOfDay = tasksByDay[date] ?: emptyList()
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .verticalScroll(rememberScrollState())
+                                ) {
+                                    tasksOfDay.forEach { task ->
+                                        Surface(
+                                            tonalElevation = 0.dp,
+                                            shape = RoundedCornerShape(6.dp),
+                                            color = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(vertical = 2.dp)
+                                                .clickable {
+                                                    selectedTask = task
+                                                    showTaskDialog = true
+                                                }
+                                        ) {
+                                            Column(modifier = Modifier.padding(4.dp)) {
+                                                Text(
+                                                    task.title,
+                                                    fontWeight = FontWeight.Bold,
+                                                    fontSize = 10.sp,
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
+                                                Text(
+                                                    task.dueTime.format(timeFormatter),
+                                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    maxLines = 1,
+                                                    overflow = TextOverflow.Ellipsis
+                                                )
                                             }
-                                    ) {
-                                        Column(modifier = Modifier.padding(4.dp)) {
-                                            Text(task.title, fontWeight = FontWeight.Bold)
-                                            Text("Hora: ${task.dueTime}", style = MaterialTheme.typography.bodySmall)
                                         }
                                     }
                                 }
@@ -210,7 +250,7 @@ fun CalendarMockupScreen() {
                         }
                     } else {
                         // Celda vacia para alinear el primer dia del mes
-                        Box(modifier = Modifier.height(120.dp)) { }
+                        Box(modifier = Modifier.height(110.dp)) { }
                     }
                 }
             }
@@ -234,7 +274,11 @@ fun CalendarMockupScreen() {
                         }
                     },
                     confirmButton = {
-                        Button(onClick = { showTaskDialog = false }) {
+                        Button(onClick = {
+                            showTaskDialog = false
+                            selectedTask?.let { removeTaskById(it.id) }
+                            selectedTask = null
+                         }) {
                             Text("Completar tarea")
                         }
                     },
@@ -249,25 +293,10 @@ fun CalendarMockupScreen() {
             if (showAddTaskDialog) {
                 AddTaskDialog(
                     onDismiss = { showAddTaskDialog = false },
-                    onAddTask = { 
-                        // TODO: aqui mas adelante se guardara la tarea
-                        showAddTaskDialog = false
+                    onAddTask = { newTask ->
+                        tasks.add(newTask)
                     }
                 )
-            }
-
-
-            Spacer(modifier = Modifier.weight(1f))
-
-            // Footer
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(12.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Text("© 2025 FocusUp - Mockup", style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -277,12 +306,13 @@ fun CalendarMockupScreen() {
 @Composable
 fun AddTaskDialog(
     onDismiss: () -> Unit,
-    onAddTask: () -> Unit
+    onAddTask: (Task) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(12.dp),
             tonalElevation = 4.dp,
+            color = MaterialTheme.colorScheme.background,
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight(0.9f) // casi pantalla completa
@@ -299,12 +329,15 @@ fun AddTaskDialog(
 
                 var taskName by remember { mutableStateOf("") }
                 var taskDescription by remember { mutableStateOf("") }
-                //var taskDueDate by remember { mutableStateOf(LocalDate.now()) } // fecha como LocalDate
-                //var taskDueTime by remember { mutableStateOf(LocalTime.now()) } // hora como LocalTime
-                var taskDueDate by remember { mutableStateOf("") } // fecha como String
-                var taskDueTime by remember { mutableStateOf("") } // hora como String
+                var taskDueDate by remember { mutableStateOf(LocalDate.now()) } // fecha como LocalDate
+                var taskDueTime by remember { mutableStateOf(LocalTime.now()) } // hora como LocalTime
+                //var taskDueDate by remember { mutableStateOf("") } // fecha como String
+                //var taskDueTime by remember { mutableStateOf("") } // hora como String
                 var selectedDifficulty by remember { mutableStateOf(1) }
                 var expanded by remember { mutableStateOf(false) }
+                var taskSteps by remember { mutableStateOf(listOf<String>()) }
+
+                val context = LocalContext.current
 
                 OutlinedTextField(
                     value = taskName,
@@ -321,17 +354,45 @@ fun AddTaskDialog(
                 )
 
                 OutlinedTextField(
-                    value = taskDueDate,
-                    onValueChange = { taskDueDate = it },
+                    value = taskDueDate.format(dateFormatter),
+                    onValueChange = {},
                     label = { Text("Fecha de entrega") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val picker = DatePickerDialog(
+                                context,
+                                { _, year, month, dayOfMonth ->
+                                    taskDueDate = LocalDate.of(year, month + 1, dayOfMonth)
+                                },
+                                taskDueDate.year,
+                                taskDueDate.monthValue - 1,
+                                taskDueDate.dayOfMonth
+                            )
+                            picker.show()
+                        },
+                    readOnly = true
                 )
 
                 OutlinedTextField(
-                    value = taskDueTime,
-                    onValueChange = { taskDueTime = it },
+                    value = taskDueTime.format(timeFormatter),
+                    onValueChange = {},
                     label = { Text("Hora de entrega") },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            val picker = TimePickerDialog(
+                                context,
+                                { _, hour, minute ->
+                                    taskDueTime = LocalTime.of(hour, minute)
+                                },
+                                taskDueTime.hour,
+                                taskDueTime.minute,
+                                true
+                            )
+                            picker.show()
+                        },
+                    readOnly = true
                 )
 
                 Row(
@@ -378,7 +439,22 @@ fun AddTaskDialog(
                     TextButton(onClick = onDismiss) {
                         Text("Regresar")
                     }
-                    Button(onClick = onAddTask) {
+                    Button(
+                        onClick = {
+                            val newId = (tasksList.maxOfOrNull { it.id } ?: 0) + 1
+                            val newTask = Task(
+                                title = if (taskName == "") "Tarea sin nombre" else taskName,
+                                description = if (taskDescription == "") "Descripcion de la tarea" else taskDescription,
+                                dueDate = taskDueDate,
+                                dueTime = taskDueTime.withSecond(0).withNano(0),
+                                difficulty = selectedDifficulty,
+                                steps = taskSteps,
+                                id = newId
+                            )
+                            onAddTask(newTask)
+                            onDismiss()
+                        }
+                    ) {
                         Text("Agregar")
                     }
                 }
@@ -394,4 +470,18 @@ fun CalendarMockupPreview() {
     FocusUpTheme {
         CalendarMockupScreen()
     }
+}
+
+fun getTasksList(): List<Task> {
+    return listOf(
+        Task("Tarea 1", "Descripcion de la tarea 1", LocalDate.now().plusDays(5), java.time.LocalTime.of(14, 0), 3, listOf("Paso 1", "Paso 2"), 1),
+        Task("Lectura 1", "Descripcion de la lectura 1", LocalDate.now().plusDays(1), java.time.LocalTime.of(16, 0), 2, listOf("Leer capitulo 1", "Leer capitulo 2"), 2),
+        Task("Tarea 2", "Descripcion de la tarea 2", LocalDate.now().plusDays(2), java.time.LocalTime.of(10, 0), 4, emptyList(), 3),
+        Task("Proyecto", "Descripcion del proyecto", LocalDate.now().plusDays(4), java.time.LocalTime.of(23, 59), 5, emptyList(), 4),
+        Task("Tarea 5", "Descripcion de la tarea 5", LocalDate.now().plusDays(14), java.time.LocalTime.of(12, 0), 1, emptyList(), 5),
+    )
+}
+
+fun removeTaskById(taskId: Int) {
+    tasksList.removeAll { it.id == taskId }
 }
