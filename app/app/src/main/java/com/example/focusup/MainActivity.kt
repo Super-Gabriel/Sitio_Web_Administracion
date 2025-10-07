@@ -28,6 +28,8 @@ import androidx.compose.ui.graphics.Color
 import com.example.focusup.ui.theme.FocusUpTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.material3.Surface
@@ -335,7 +337,7 @@ fun AddTaskDialog(
                 //var taskDueTime by remember { mutableStateOf("") } // hora como String
                 var selectedDifficulty by remember { mutableStateOf(1) }
                 var expanded by remember { mutableStateOf(false) }
-                var taskSteps by remember { mutableStateOf(listOf<String>()) }
+                var taskSteps = remember { mutableStateListOf<String>() }
 
                 val context = LocalContext.current
 
@@ -422,13 +424,42 @@ fun AddTaskDialog(
                     }
                 }
 
-                OutlinedTextField(
-                    value = "", // pasos no implementados aun
-                    onValueChange = { /* TODO: manejar pasos */ },
-                    label = { Text("Pasos (no implementado)") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = false
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Pasos")
+
+                    taskSteps.forEachIndexed { index, step ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = step,
+                                onValueChange = { newValue ->
+                                    taskSteps[index] = newValue
+                                },
+                                label = { Text("Paso ${index + 1}") },
+                                modifier = Modifier.weight(1f)
+                            )
+
+                            IconButton(onClick = { taskSteps.removeAt(index) }) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = "Eliminar paso"
+                                )
+                            }
+                        }
+                    }
+
+                    Button(
+                        onClick = { taskSteps.add("") },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text("Agregar paso")
+                    }
+                }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
