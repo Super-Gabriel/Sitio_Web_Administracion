@@ -2,6 +2,7 @@ package com.example.focusup
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -46,6 +47,18 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalTime
 
 import com.example.focusup.model.Task
+import com.example.focusup.ui.theme.SpecialRed
+import com.example.focusup.ui.theme.SpecialRed2
+import com.example.focusup.ui.theme.SpecialOrange
+import com.example.focusup.ui.theme.SpecialOrange2
+import com.example.focusup.ui.theme.SpecialYellow
+import com.example.focusup.ui.theme.SpecialYellow2
+import com.example.focusup.ui.theme.SpecialGreen
+import com.example.focusup.ui.theme.SpecialGreen2
+import com.example.focusup.ui.theme.SpecialBlue
+import com.example.focusup.ui.theme.SpecialBlue2
+import com.example.focusup.GetTaskColorText
+import javax.crypto.Mac
 
 
 val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
@@ -57,7 +70,7 @@ val tasksList = mutableStateListOf<Task>().apply { addAll(getTasksList()) }
 @Composable
 fun isPortrait(): Boolean {
     val configuration = LocalConfiguration.current
-    return configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
+    return configuration.orientation == Configuration.ORIENTATION_PORTRAIT
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -68,7 +81,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FocusUpTheme {
-                CalendarMockupScreen()
+                CalendarScreen()
             }
         }
     }
@@ -77,7 +90,7 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun CalendarMockupScreen() {
+fun CalendarScreen() {
     val today = LocalDate.now()
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     val daysOfMonth: List<LocalDate> = (1..currentMonth.lengthOfMonth()).map { currentMonth.atDay(it) }
@@ -116,13 +129,13 @@ fun CalendarMockupScreen() {
                 title = { Text("FocusUp - Calendario", fontWeight = FontWeight.Bold) },
                 actions = {
                     TextButton(onClick = { /* TODO: perfil */ }) {
-                        Text("Perfil", color = Color.White)
+                        Text("Perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Black,
-                    titleContentColor = Color.White,
-                    actionIconContentColor = Color.White
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    titleContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             )
         },
@@ -131,10 +144,10 @@ fun CalendarMockupScreen() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.surfaceVariant)
-                    .padding(12.dp),
+                    .padding(10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("© 2025 FocusUp - Mockup", style = MaterialTheme.typography.bodySmall)
+                Text("© 2025 FocusUp", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     ) { innerPadding ->
@@ -169,7 +182,8 @@ fun CalendarMockupScreen() {
                 Text(
                     text = monthName.capitalize(),
                     style = MaterialTheme.typography.titleLarge,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colorScheme.onBackground
                 )
                 Button(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
                     Text(">")
@@ -181,7 +195,7 @@ fun CalendarMockupScreen() {
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom").forEach { dayName ->
-                    Text(dayName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                    Text(dayName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground)
                 }
             }
 
@@ -197,13 +211,17 @@ fun CalendarMockupScreen() {
                         Card(
                             modifier = Modifier.height(120.dp),
                             shape = RoundedCornerShape(10.dp),
-                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+                            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surface
+                            )
                         ) {
                             Column(modifier = Modifier.padding(8.dp)) {
                                 // Numero del dia
                                 Text(
                                     date.dayOfMonth.toString(),
-                                    fontWeight = FontWeight.Bold
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
 
                                 Spacer(modifier = Modifier.height(4.dp))
@@ -219,7 +237,7 @@ fun CalendarMockupScreen() {
                                         Surface(
                                             tonalElevation = 0.dp,
                                             shape = RoundedCornerShape(6.dp),
-                                            color = MaterialTheme.colorScheme.secondary,
+                                            color = GetTaskColor(task.difficulty),
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(vertical = 2.dp)
@@ -233,14 +251,14 @@ fun CalendarMockupScreen() {
                                                     task.title,
                                                     fontWeight = FontWeight.Bold,
                                                     fontSize = 10.sp,
-                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    color = MaterialTheme.colorScheme.onSecondary,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
                                                 Text(
                                                     task.dueTime.format(timeFormatter),
                                                     style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
-                                                    color = MaterialTheme.colorScheme.tertiary,
+                                                    color = MaterialTheme.colorScheme.onSecondary,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
                                                 )
@@ -260,17 +278,17 @@ fun CalendarMockupScreen() {
             if (showTaskDialog && selectedTask != null) {
                 AlertDialog(
                     onDismissRequest = { showTaskDialog = false },
-                    title = { Text(text = selectedTask!!.title) },
+                    title = { Text(text = selectedTask!!.title, color = MaterialTheme.colorScheme.onSecondary) },
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Descripción: ${selectedTask!!.description}")
-                            Text("Fecha: ${selectedTask!!.dueDate}")
-                            Text("Hora: ${selectedTask!!.dueTime}")
-                            Text("Dificultad: ${selectedTask!!.difficulty}/5")
+                            Text("Descripción: ${selectedTask!!.description}", color = MaterialTheme.colorScheme.onSecondary)
+                            Text("Fecha: ${selectedTask!!.dueDate}", color = MaterialTheme.colorScheme.onSecondary)
+                            Text("Hora: ${selectedTask!!.dueTime}", color = MaterialTheme.colorScheme.onSecondary)
+                            Text("Dificultad: ${selectedTask!!.difficulty}/5", color = MaterialTheme.colorScheme.onSecondary)
                             if (selectedTask!!.steps.isNotEmpty()) {
-                                Text("Pasos:")
+                                Text("Pasos:", color = MaterialTheme.colorScheme.onSecondary)
                                 selectedTask!!.steps.forEach { step ->
-                                    Text("- $step", style = MaterialTheme.typography.bodySmall)
+                                    Text("- $step", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondary)
                                 }
                             }
                         }
@@ -280,15 +298,24 @@ fun CalendarMockupScreen() {
                             showTaskDialog = false
                             selectedTask?.let { removeTaskById(it.id) }
                             selectedTask = null
-                         }) {
+                         },
+                         colors = ButtonDefaults.buttonColors(
+                            containerColor = GetTaskColorText(selectedTask!!.difficulty),
+                            contentColor = MaterialTheme.colorScheme.onSecondary
+                        )) {
                             Text("Completar tarea")
                         }
                     },
                     dismissButton = {
-                        TextButton(onClick = { showTaskDialog = false }) {
+                        Button(onClick = { showTaskDialog = false },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = GetTaskColorText(selectedTask!!.difficulty),
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            )) {
                             Text("Cerrar")
                         }
-                    }
+                    },
+                    containerColor = GetTaskColor(selectedTask!!.difficulty)
                 )
             }
 
@@ -344,21 +371,21 @@ fun AddTaskDialog(
                 OutlinedTextField(
                     value = taskName,
                     onValueChange = { taskName = it },
-                    label = { Text("Nombre de la tarea") },
+                    label = { Text("Nombre de la tarea", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = taskDescription,
                     onValueChange = { taskDescription = it },
-                    label = { Text("Descripcion") },
+                    label = { Text("Descripcion", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth()
                 )
 
                 OutlinedTextField(
                     value = taskDueDate.format(dateFormatter),
                     onValueChange = {},
-                    label = { Text("Fecha de entrega") },
+                    label = { Text("Fecha de entrega", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
@@ -379,7 +406,7 @@ fun AddTaskDialog(
                 OutlinedTextField(
                     value = taskDueTime.format(timeFormatter),
                     onValueChange = {},
-                    label = { Text("Hora de entrega") },
+                    label = { Text("Hora de entrega", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable {
@@ -401,7 +428,7 @@ fun AddTaskDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Dificultad:")
+                    Text("Dificultad:", color = MaterialTheme.colorScheme.onBackground)
 
                     Box {
                         Button(onClick = { expanded = true }) {
@@ -427,7 +454,7 @@ fun AddTaskDialog(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Pasos")
+                    Text("Pasos", color = MaterialTheme.colorScheme.onBackground)
 
                     taskSteps.forEachIndexed { index, step ->
                         Row(
@@ -440,7 +467,7 @@ fun AddTaskDialog(
                                 onValueChange = { newValue ->
                                     taskSteps[index] = newValue
                                 },
-                                label = { Text("Paso ${index + 1}") },
+                                label = { Text("Paso ${index + 1}", color = MaterialTheme.colorScheme.onBackground) },
                                 modifier = Modifier.weight(1f)
                             )
 
@@ -465,9 +492,9 @@ fun AddTaskDialog(
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.End
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
                 ) {
-                    TextButton(onClick = onDismiss) {
+                    Button(onClick = onDismiss) {
                         Text("Regresar")
                     }
                     Button(
@@ -486,7 +513,7 @@ fun AddTaskDialog(
                             onDismiss()
                         }
                     ) {
-                        Text("Agregar")
+                        Text("Agregar tarea")
                     }
                 }
             }
@@ -494,25 +521,54 @@ fun AddTaskDialog(
     }
 }
 
+// Funcion de preview
 @RequiresApi(Build.VERSION_CODES.O)
 @Preview(showBackground = true, widthDp = 900, heightDp = 480)
 @Composable
-fun CalendarMockupPreview() {
+fun CalendarPreview() {
     FocusUpTheme {
-        CalendarMockupScreen()
+        CalendarScreen()
     }
 }
 
+// Funcion para obtener una lista de tareas de ejemplo
 fun getTasksList(): List<Task> {
     return listOf(
-        Task("Tarea 1", "Descripcion de la tarea 1", LocalDate.now().plusDays(5), java.time.LocalTime.of(14, 0), 3, listOf("Paso 1", "Paso 2"), 1),
-        Task("Lectura 1", "Descripcion de la lectura 1", LocalDate.now().plusDays(1), java.time.LocalTime.of(16, 0), 2, listOf("Leer capitulo 1", "Leer capitulo 2"), 2),
-        Task("Tarea 2", "Descripcion de la tarea 2", LocalDate.now().plusDays(2), java.time.LocalTime.of(10, 0), 4, emptyList(), 3),
-        Task("Proyecto", "Descripcion del proyecto", LocalDate.now().plusDays(4), java.time.LocalTime.of(23, 59), 5, emptyList(), 4),
-        Task("Tarea 5", "Descripcion de la tarea 5", LocalDate.now().plusDays(14), java.time.LocalTime.of(12, 0), 1, emptyList(), 5),
+        Task("Tarea 1", "Descripcion de la tarea 1", LocalDate.now().plusDays(5), LocalTime.of(14, 0), 3, listOf("Paso 1", "Paso 2"), 1),
+        Task("Lectura 1", "Descripcion de la lectura 1", LocalDate.now().plusDays(1), LocalTime.of(16, 0), 2, listOf("Leer capitulo 1", "Leer capitulo 2"), 2),
+        Task("Tarea 2", "Descripcion de la tarea 2", LocalDate.now().plusDays(2), LocalTime.of(10, 0), 4, emptyList(), 3),
+        Task("Proyecto", "Descripcion del proyecto", LocalDate.now().plusDays(4), LocalTime.of(23, 59), 5, emptyList(), 4),
+        Task("Tarea 5", "Descripcion de la tarea 5", LocalDate.now().plusDays(14), LocalTime.of(12, 0), 1, emptyList(), 5),
     )
 }
 
+// Funcion para eliminar tarea por id
 fun removeTaskById(taskId: Int) {
     tasksList.removeAll { it.id == taskId }
+}
+
+// Funcion para obtener un color segun la dificultad
+@Composable
+fun GetTaskColor(difficulty: Int): Color {
+    return when (difficulty) {
+        5 -> SpecialRed
+        4 -> SpecialOrange
+        3 -> SpecialYellow
+        2 -> SpecialGreen
+        1 -> SpecialBlue
+        else -> MaterialTheme.colorScheme.secondary
+    }
+}
+
+// Funcion para obtener un color para texto segun la dificultad
+@Composable
+fun GetTaskColorText(difficulty: Int): Color {
+    return when (difficulty) {
+        5 -> SpecialRed2
+        4 -> SpecialOrange2
+        3 -> SpecialYellow2
+        2 -> SpecialGreen2
+        1 -> SpecialBlue2
+        else -> MaterialTheme.colorScheme.secondary
+    }
 }
