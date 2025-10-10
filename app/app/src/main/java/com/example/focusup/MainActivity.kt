@@ -382,47 +382,59 @@ fun AddTaskDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                OutlinedTextField(
-                    value = taskDueDate.format(dateFormatter),
-                    onValueChange = {},
-                    label = { Text("Fecha de entrega", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val picker = DatePickerDialog(
-                                context,
-                                { _, year, month, dayOfMonth ->
-                                    taskDueDate = LocalDate.of(year, month + 1, dayOfMonth)
-                                },
-                                taskDueDate.year,
-                                taskDueDate.monthValue - 1,
-                                taskDueDate.dayOfMonth
-                            )
-                            picker.show()
-                        },
-                    readOnly = true
-                )
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = taskDueDate.format(dateFormatter),
+                        onValueChange = {},
+                        label = { Text("Fecha de entrega" ,color = MaterialTheme.colorScheme.onBackground)},
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                    )
 
-                OutlinedTextField(
-                    value = taskDueTime.format(timeFormatter),
-                    onValueChange = {},
-                    label = { Text("Hora de entrega", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable {
-                            val picker = TimePickerDialog(
-                                context,
-                                { _, hour, minute ->
-                                    taskDueTime = LocalTime.of(hour, minute)
-                                },
-                                taskDueTime.hour,
-                                taskDueTime.minute,
-                                true
-                            )
-                            picker.show()
-                        },
-                    readOnly = true
-                )
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable {
+                                val picker = DatePickerDialog(
+                                    context,
+                                    { _, year, month, dayOfMonth ->
+                                        taskDueDate = LocalDate.of(year, month + 1, dayOfMonth)
+                                    },
+                                    taskDueDate.year,
+                                    taskDueDate.monthValue - 1,
+                                    taskDueDate.dayOfMonth
+                                )
+                                picker.show()
+                            },
+                    )
+                }
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = taskDueTime.format(timeFormatter),
+                        onValueChange = {},
+                        label = { Text("Hora de entrega", color = MaterialTheme.colorScheme.onBackground) },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable {
+                                val picker = TimePickerDialog(
+                                    context,
+                                    { _, hour, minute ->
+                                        taskDueTime = LocalTime.of(hour, minute)
+                                    },
+                                    taskDueTime.hour,
+                                    taskDueTime.minute,
+                                    true
+                                )
+                                picker.show()
+                            }
+                    )
+                }
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
