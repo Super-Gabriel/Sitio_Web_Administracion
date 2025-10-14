@@ -123,7 +123,8 @@ fun FocusUpTheme(
         else -> LightColorScheme2
     }
     */
-    val colorScheme = DarkColorScheme2
+    //val colorScheme = DarkColorScheme2
+    val colorScheme = if(darkTheme) DarkColorScheme2 else LightColorScheme2
 
     MaterialTheme(
         colorScheme = colorScheme,
