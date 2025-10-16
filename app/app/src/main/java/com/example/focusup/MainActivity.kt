@@ -47,6 +47,7 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalTime
 
 import com.example.focusup.model.Task
+import com.example.focusup.model.TasksProvider
 import com.example.focusup.ui.theme.SpecialRed
 import com.example.focusup.ui.theme.SpecialRed2
 import com.example.focusup.ui.theme.SpecialOrange
@@ -57,9 +58,58 @@ import com.example.focusup.ui.theme.SpecialGreen
 import com.example.focusup.ui.theme.SpecialGreen2
 import com.example.focusup.ui.theme.SpecialBlue
 import com.example.focusup.ui.theme.SpecialBlue2
-import com.example.focusup.GetTaskColorText
-import javax.crypto.Mac
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.content.Context
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Intent
+import java.util.*
+
+// Crear canal de notificacion
+@RequiresApi(Build.VERSION_CODES.O)
+private fun createNotificationChannel(context: Context) {
+    val channel = NotificationChannel(
+        "TASK_REMINDER_CHANNEL",
+        "Recordatorios de tareas",
+        NotificationManager.IMPORTANCE_HIGH
+    ).apply {
+        description = "Canal para recordatorios diarios de FocusUp"
+    }
+    val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    manager.createNotificationChannel(channel)
+}
+
+// Recordatorio diario a las 9:00 AM
+@RequiresApi(Build.VERSION_CODES.O)
+fun scheduleDailyReminder(context: Context) {
+    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val intent = Intent(context, ReminderReceiver::class.java)
+    val pendingIntent = PendingIntent.getBroadcast(
+        context,
+        0,
+        intent,
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+    // Configura la hora 9:00 a.m.
+    val calendar = Calendar.getInstance().apply {
+        timeInMillis = System.currentTimeMillis()
+        set(Calendar.HOUR_OF_DAY, 9)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+    }
+    // En caso de que la hora ya haya pasado, programa para el dia siguiente
+    if (calendar.timeInMillis < System.currentTimeMillis()) {
+        calendar.add(Calendar.DAY_OF_YEAR, 1)
+    }
+    alarmManager.setRepeating(
+        AlarmManager.RTC_WAKEUP,
+        calendar.timeInMillis,
+        AlarmManager.INTERVAL_DAY,
+        pendingIntent
+    )
+}
 
 val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
@@ -79,6 +129,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1)
+        }
+        createNotificationChannel(this)
+        scheduleDailyReminder(this)
         setContent {
             FocusUpTheme {
                 CalendarScreen()
@@ -545,13 +600,7 @@ fun CalendarPreview() {
 
 // Funcion para obtener una lista de tareas de ejemplo
 fun getTasksList(): List<Task> {
-    return listOf(
-        Task("Tarea 1", "Descripcion de la tarea 1", LocalDate.now().plusDays(5), LocalTime.of(14, 0), 3, listOf("Paso 1", "Paso 2"), 1),
-        Task("Lectura 1", "Descripcion de la lectura 1", LocalDate.now().plusDays(1), LocalTime.of(16, 0), 2, listOf("Leer capitulo 1", "Leer capitulo 2"), 2),
-        Task("Tarea 2", "Descripcion de la tarea 2", LocalDate.now().plusDays(2), LocalTime.of(10, 0), 4, emptyList(), 3),
-        Task("Proyecto", "Descripcion del proyecto", LocalDate.now().plusDays(4), LocalTime.of(23, 59), 5, emptyList(), 4),
-        Task("Tarea 5", "Descripcion de la tarea 5", LocalDate.now().plusDays(14), LocalTime.of(12, 0), 1, emptyList(), 5),
-    )
+    return TasksProvider.getTasksList()
 }
 
 // Funcion para eliminar tarea por id
