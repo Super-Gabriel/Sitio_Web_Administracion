@@ -13,7 +13,6 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -46,8 +45,9 @@ import java.util.Locale
 import java.time.format.DateTimeFormatter
 import java.time.LocalTime
 
-import com.example.focusup.model.Task
-import com.example.focusup.model.TasksProvider
+import com.example.focusup.model.TaskEntity // Cambio a TaskEntity
+import com.example.focusup.model.AppDatabase
+import com.example.focusup.model.TaskRepository
 import com.example.focusup.ui.theme.SpecialRed
 import com.example.focusup.ui.theme.SpecialRed2
 import com.example.focusup.ui.theme.SpecialOrange
@@ -66,6 +66,10 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
 import java.util.*
+
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
@@ -114,9 +118,6 @@ fun scheduleDailyReminder(context: Context) {
 val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-@RequiresApi(Build.VERSION_CODES.O)
-val tasksList = mutableStateListOf<Task>().apply { addAll(getTasksList()) }
-
 @Composable
 fun isPortrait(): Boolean {
     val configuration = LocalConfiguration.current
@@ -134,9 +135,14 @@ class MainActivity : ComponentActivity() {
         }
         createNotificationChannel(this)
         scheduleDailyReminder(this)
+        
+        // Inicializando Room database y repository
+        val database = AppDatabase.getInstance(this)
+        val taskRepository = TaskRepository(database.taskDao())
+        
         setContent {
             FocusUpTheme {
-                CalendarScreen()
+                CalendarScreen(taskRepository = taskRepository)
             }
         }
     }
@@ -145,7 +151,7 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun CalendarScreen() {
+fun CalendarScreen(taskRepository: TaskRepository) {
     val today = LocalDate.now()
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     val daysOfMonth: List<LocalDate> = (1..currentMonth.lengthOfMonth()).map { currentMonth.atDay(it) }
@@ -164,19 +170,29 @@ fun CalendarScreen() {
     val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "ES"))
     val monthName = currentMonth.format(monthFormatter)
 
-    val tasks = tasksList
+    // Usando TaskEntity en lugar de Task
+    var tasks by remember { mutableStateOf<List<TaskEntity>>(emptyList()) }
+    
+    // Cargar tareas desde la base de datos
+    LaunchedEffect(Unit) {
+        taskRepository.getAllTasks().collect { taskList ->
+            tasks = taskList
+        }
+    }
 
-    val tasksByDay: Map<LocalDate, List<Task>> =
+    val tasksByDay: Map<LocalDate, List<TaskEntity>> =
     daysOfMonth.associateWith { day ->
         tasks.filter { it.dueDate.year == day.year && it.dueDate.month == day.month && it.dueDate.dayOfMonth == day.dayOfMonth }
     }
     
     var showTaskDialog by remember { mutableStateOf(false) }
-    var selectedTask by remember { mutableStateOf<Task?>(null) }
-
+    // Cambio a tipo TaskEntity
+    var selectedTask by remember { mutableStateOf<TaskEntity?>(null) }
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
 
+    val context = LocalContext.current
+    val lifecycleScope = remember { (context as? ComponentActivity)?.lifecycleScope }
 
     Scaffold(
         topBar = {
@@ -253,7 +269,6 @@ fun CalendarScreen() {
                     Text(dayName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground)
                 }
             }
-
 
             // Grid de dias
             LazyVerticalGrid(
@@ -351,7 +366,11 @@ fun CalendarScreen() {
                     confirmButton = {
                         Button(onClick = {
                             showTaskDialog = false
-                            selectedTask?.let { removeTaskById(it.id) }
+                            selectedTask?.let { task ->
+                                lifecycleScope?.launch {
+                                    taskRepository.deleteTask(task)
+                                }
+                            }
                             selectedTask = null
                          },
                          colors = ButtonDefaults.buttonColors(
@@ -378,7 +397,9 @@ fun CalendarScreen() {
                 AddTaskDialog(
                     onDismiss = { showAddTaskDialog = false },
                     onAddTask = { newTask ->
-                        tasks.add(newTask)
+                        lifecycleScope?.launch {
+                            taskRepository.insertTask(newTask) //
+                        }
                     }
                 )
             }
@@ -390,7 +411,7 @@ fun CalendarScreen() {
 @Composable
 fun AddTaskDialog(
     onDismiss: () -> Unit,
-    onAddTask: (Task) -> Unit
+    onAddTask: (TaskEntity) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -413,10 +434,8 @@ fun AddTaskDialog(
 
                 var taskName by remember { mutableStateOf("") }
                 var taskDescription by remember { mutableStateOf("") }
-                var taskDueDate by remember { mutableStateOf(LocalDate.now()) } // fecha como LocalDate
-                var taskDueTime by remember { mutableStateOf(LocalTime.now()) } // hora como LocalTime
-                //var taskDueDate by remember { mutableStateOf("") } // fecha como String
-                //var taskDueTime by remember { mutableStateOf("") } // hora como String
+                var taskDueDate by remember { mutableStateOf(LocalDate.now()) }
+                var taskDueTime by remember { mutableStateOf(LocalTime.now()) }
                 var selectedDifficulty by remember { mutableStateOf(1) }
                 var expanded by remember { mutableStateOf(false) }
                 var taskSteps = remember { mutableStateListOf<String>() }
@@ -566,15 +585,14 @@ fun AddTaskDialog(
                     }
                     Button(
                         onClick = {
-                            val newId = (tasksList.maxOfOrNull { it.id } ?: 0) + 1
-                            val newTask = Task(
+                            val newTask = TaskEntity(
                                 title = if (taskName == "") "Tarea sin nombre" else taskName,
                                 description = if (taskDescription == "") "Descripcion de la tarea" else taskDescription,
                                 dueDate = taskDueDate,
                                 dueTime = taskDueTime.withSecond(0).withNano(0),
                                 difficulty = selectedDifficulty,
-                                steps = taskSteps,
-                                id = newId
+                                steps = taskSteps
+                                // El id se genera automáticamente (0 = auto-generate)
                             )
                             onAddTask(newTask)
                             onDismiss()
@@ -594,18 +612,9 @@ fun AddTaskDialog(
 @Composable
 fun CalendarPreview() {
     FocusUpTheme {
-        CalendarScreen()
+        // Para el preview, podemos pasar un repository vacío o mock
+        CalendarScreen(taskRepository = TaskRepository(AppDatabase.getInstance(LocalContext.current).taskDao()))
     }
-}
-
-// Funcion para obtener una lista de tareas de ejemplo
-fun getTasksList(): List<Task> {
-    return TasksProvider.getTasksList()
-}
-
-// Funcion para eliminar tarea por id
-fun removeTaskById(taskId: Int) {
-    tasksList.removeAll { it.id == taskId }
 }
 
 // Funcion para obtener un color segun la dificultad
