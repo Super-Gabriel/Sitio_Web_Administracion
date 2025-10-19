@@ -47,7 +47,7 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalTime
 
 import com.example.focusup.model.Task
-import com.example.focusup.model.TasksProvider
+//import com.example.focusup.model.TasksProvider
 import com.example.focusup.ui.theme.SpecialRed
 import com.example.focusup.ui.theme.SpecialRed2
 import com.example.focusup.ui.theme.SpecialOrange
@@ -66,6 +66,9 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
 import java.util.*
+
+// Import para TaskStorage
+import com.example.focusup.storage.TaskStorage
 
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
@@ -114,9 +117,6 @@ fun scheduleDailyReminder(context: Context) {
 val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
 val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
 
-@RequiresApi(Build.VERSION_CODES.O)
-val tasksList = mutableStateListOf<Task>().apply { addAll(getTasksList()) }
-
 @Composable
 fun isPortrait(): Boolean {
     val configuration = LocalConfiguration.current
@@ -136,7 +136,7 @@ class MainActivity : ComponentActivity() {
         scheduleDailyReminder(this)
         setContent {
             FocusUpTheme {
-                CalendarScreen()
+                CalendarScreen(context = this)
             }
         }
     }
@@ -145,7 +145,14 @@ class MainActivity : ComponentActivity() {
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
-fun CalendarScreen() {
+fun CalendarScreen(context: Context) {
+    // Cargar tareas desde el almacenamiento
+    val tasksList = remember { 
+        mutableStateListOf<Task>().apply { 
+            addAll(TaskStorage.loadTasks(context)) 
+        } 
+    }
+
     val today = LocalDate.now()
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     val daysOfMonth: List<LocalDate> = (1..currentMonth.lengthOfMonth()).map { currentMonth.atDay(it) }
@@ -162,7 +169,9 @@ fun CalendarScreen() {
     }
 
     val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "ES"))
-    val monthName = currentMonth.format(monthFormatter)
+    val monthName = currentMonth.format(monthFormatter).replaceFirstChar { 
+        if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString() 
+    }
 
     val tasks = tasksList
 
@@ -174,9 +183,7 @@ fun CalendarScreen() {
     var showTaskDialog by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
-
     var showAddTaskDialog by remember { mutableStateOf(false) }
-
 
     Scaffold(
         topBar = {
@@ -235,7 +242,7 @@ fun CalendarScreen() {
                     Text("<")
                 }
                 Text(
-                    text = monthName.capitalize(),
+                    text = monthName,
                     style = MaterialTheme.typography.titleLarge,
                     textAlign = TextAlign.Center,
                     color = MaterialTheme.colorScheme.onBackground
@@ -253,7 +260,6 @@ fun CalendarScreen() {
                     Text(dayName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground)
                 }
             }
-
 
             // Grid de dias
             LazyVerticalGrid(
@@ -337,8 +343,8 @@ fun CalendarScreen() {
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Descripción: ${selectedTask!!.description}", color = MaterialTheme.colorScheme.onSecondary)
-                            Text("Fecha: ${selectedTask!!.dueDate}", color = MaterialTheme.colorScheme.onSecondary)
-                            Text("Hora: ${selectedTask!!.dueTime}", color = MaterialTheme.colorScheme.onSecondary)
+                            Text("Fecha: ${selectedTask!!.dueDate.format(dateFormatter)}", color = MaterialTheme.colorScheme.onSecondary)
+                            Text("Hora: ${selectedTask!!.dueTime.format(timeFormatter)}", color = MaterialTheme.colorScheme.onSecondary)
                             Text("Dificultad: ${selectedTask!!.difficulty}/5", color = MaterialTheme.colorScheme.onSecondary)
                             if (selectedTask!!.steps.isNotEmpty()) {
                                 Text("Pasos:", color = MaterialTheme.colorScheme.onSecondary)
@@ -351,7 +357,10 @@ fun CalendarScreen() {
                     confirmButton = {
                         Button(onClick = {
                             showTaskDialog = false
-                            selectedTask?.let { removeTaskById(it.id) }
+                            selectedTask?.let { task ->
+                                tasksList.remove(task)
+                                TaskStorage.removeTaskById(context, task.id)
+                            }
                             selectedTask = null
                          },
                          colors = ButtonDefaults.buttonColors(
@@ -378,8 +387,10 @@ fun CalendarScreen() {
                 AddTaskDialog(
                     onDismiss = { showAddTaskDialog = false },
                     onAddTask = { newTask ->
-                        tasks.add(newTask)
-                    }
+                        tasksList.add(newTask)
+                        TaskStorage.addTask(context, newTask)
+                    },
+                    nextId = TaskStorage.getNextId(context)
                 )
             }
         }
@@ -390,7 +401,8 @@ fun CalendarScreen() {
 @Composable
 fun AddTaskDialog(
     onDismiss: () -> Unit,
-    onAddTask: (Task) -> Unit
+    onAddTask: (Task) -> Unit,
+    nextId: Int
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -413,10 +425,8 @@ fun AddTaskDialog(
 
                 var taskName by remember { mutableStateOf("") }
                 var taskDescription by remember { mutableStateOf("") }
-                var taskDueDate by remember { mutableStateOf(LocalDate.now()) } // fecha como LocalDate
-                var taskDueTime by remember { mutableStateOf(LocalTime.now()) } // hora como LocalTime
-                //var taskDueDate by remember { mutableStateOf("") } // fecha como String
-                //var taskDueTime by remember { mutableStateOf("") } // hora como String
+                var taskDueDate by remember { mutableStateOf(LocalDate.now()) }
+                var taskDueTime by remember { mutableStateOf(LocalTime.now()) }
                 var selectedDifficulty by remember { mutableStateOf(1) }
                 var expanded by remember { mutableStateOf(false) }
                 var taskSteps = remember { mutableStateListOf<String>() }
@@ -566,7 +576,6 @@ fun AddTaskDialog(
                     }
                     Button(
                         onClick = {
-                            val newId = (tasksList.maxOfOrNull { it.id } ?: 0) + 1
                             val newTask = Task(
                                 title = if (taskName == "") "Tarea sin nombre" else taskName,
                                 description = if (taskDescription == "") "Descripcion de la tarea" else taskDescription,
@@ -574,7 +583,7 @@ fun AddTaskDialog(
                                 dueTime = taskDueTime.withSecond(0).withNano(0),
                                 difficulty = selectedDifficulty,
                                 steps = taskSteps,
-                                id = newId
+                                id = nextId
                             )
                             onAddTask(newTask)
                             onDismiss()
@@ -594,18 +603,9 @@ fun AddTaskDialog(
 @Composable
 fun CalendarPreview() {
     FocusUpTheme {
-        CalendarScreen()
+        // Para el preview, pasamos un contexto nulo (no se guardarán datos reales)
+        CalendarScreen(context = LocalContext.current)
     }
-}
-
-// Funcion para obtener una lista de tareas de ejemplo
-fun getTasksList(): List<Task> {
-    return TasksProvider.getTasksList()
-}
-
-// Funcion para eliminar tarea por id
-fun removeTaskById(taskId: Int) {
-    tasksList.removeAll { it.id == taskId }
 }
 
 // Funcion para obtener un color segun la dificultad
