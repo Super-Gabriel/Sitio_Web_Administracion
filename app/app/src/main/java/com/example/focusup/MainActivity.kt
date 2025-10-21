@@ -251,6 +251,7 @@ fun CalendarScreen(context: Context) {
                     Text(">")
                 }
             }
+            Spacer(modifier = Modifier.height(15.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -260,18 +261,20 @@ fun CalendarScreen(context: Context) {
                     Text(dayName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground)
                 }
             }
+            Spacer(modifier = Modifier.height(15.dp))
 
             // Grid de dias
             LazyVerticalGrid(
                 columns = GridCells.Fixed(7), // 7 columnas para los dias de la semana
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(15.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxHeight()
             ) {
                 items(daysGrid) { date ->
                     if (date != null) {
                         Card(
-                            modifier = Modifier.height(120.dp),
-                            shape = RoundedCornerShape(10.dp),
+                            modifier = Modifier.height(100.dp),
+                            shape = RoundedCornerShape(15.dp),
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surface
@@ -330,8 +333,7 @@ fun CalendarScreen(context: Context) {
                             }
                         }
                     } else {
-                        // Celda vacia para alinear el primer dia del mes
-                        Box(modifier = Modifier.height(110.dp)) { }
+
                     }
                 }
             }
