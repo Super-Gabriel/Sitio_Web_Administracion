@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import android.util.Patterns
 
 import java.time.LocalDate
 import java.time.YearMonth
@@ -69,6 +70,7 @@ import java.util.*
 
 // Import para TaskStorage
 import com.example.focusup.storage.TaskStorage
+import java.time.format.DateTimeFormatter.ofPattern
 
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
@@ -114,8 +116,10 @@ fun scheduleDailyReminder(context: Context) {
     )
 }
 
-val dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
-val timeFormatter = DateTimeFormatter.ofPattern("HH:mm")
+@RequiresApi(Build.VERSION_CODES.O)
+val dateFormatter = ofPattern("dd/MM/yyyy")
+@RequiresApi(Build.VERSION_CODES.O)
+val timeFormatter = ofPattern("HH:mm")
 
 @Composable
 fun isPortrait(): Boolean {
@@ -153,12 +157,14 @@ fun CalendarScreen(context: Context) {
         } 
     }
 
+    val loggedIn = false // TODO: implementar login
+
     val today = LocalDate.now()
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     val daysOfMonth: List<LocalDate> = (1..currentMonth.lengthOfMonth()).map { currentMonth.atDay(it) }
 
     val firstDayOfMonth = currentMonth.atDay(1)
-    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value // 1 = lunes, 7 = domingo (según java.time)
+    val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value // 1 = lunes, 7 = domingo (segun java.time)
     val daysInMonth = currentMonth.lengthOfMonth()
     val daysGrid = mutableListOf<LocalDate?>()
     // Aniade nulls hasta el primer día de la semana
@@ -168,7 +174,7 @@ fun CalendarScreen(context: Context) {
         daysGrid.add(currentMonth.atDay(day))
     }
 
-    val monthFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "ES"))
+    val monthFormatter = ofPattern("MMMM yyyy", Locale("es", "ES"))
     val monthName = currentMonth.format(monthFormatter).replaceFirstChar { 
         if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString() 
     }
@@ -184,14 +190,27 @@ fun CalendarScreen(context: Context) {
     var selectedTask by remember { mutableStateOf<Task?>(null) }
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
+    var showAddAccountDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("FocusUp - Calendario", fontWeight = FontWeight.Bold) },
+                title = { Text("FocusUp", fontWeight = FontWeight.Bold) },
                 actions = {
-                    TextButton(onClick = { /* TODO: perfil */ }) {
-                        Text("Perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // Si el usuario esta logueado, mostrar boton de perfil
+                    if (loggedIn) {
+                        TextButton(onClick = { /* TODO: perfil */ }) {
+                            Text("Perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    // Si el usuario no esta logueado, mostrar botones de login y registro
+                    else {
+                        TextButton(onClick = { /* TODO: login */ }) {
+                            Text("Iniciar sesión", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { showAddAccountDialog = true }) {
+                            Text("Registrarse", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -395,10 +414,21 @@ fun CalendarScreen(context: Context) {
                     nextId = TaskStorage.getNextId(context)
                 )
             }
+
+            if (showAddAccountDialog) {
+                AddAccountDialog(
+                    onDismiss = { showAddAccountDialog = false }, // TODO: implementar creacion de cuenta
+                    //onAddAccount = { newAccount ->
+                    //    accountsList.add(newAccount)
+                    //    AccountStorage.addAccount(context, newAccount)
+                    //}
+                )
+            }
         }
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTaskDialog(
@@ -592,6 +622,178 @@ fun AddTaskDialog(
                         }
                     ) {
                         Text("Agregar tarea")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Funcion para crear una cuenta
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddAccountDialog(
+    onDismiss: () -> Unit,
+    //onAddAccount: (Account) -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            tonalElevation = 4.dp,
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f) // casi pantalla completa
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Crear Cuenta", style = MaterialTheme.typography.titleLarge)
+
+                var accountName by remember { mutableStateOf("") }
+                var accountEmail by remember { mutableStateOf("") }
+                var accountPassword by remember { mutableStateOf("") }
+                var accountConfirmPassword by remember { mutableStateOf("") }
+                var accountPremium by remember { mutableStateOf(false) }
+
+                var emailErrorEmpty by remember { mutableStateOf(false) }
+                var passwordErrorEmpty by remember { mutableStateOf(false) }
+                var confirmPasswordErrorMismatch by remember { mutableStateOf(false) }
+                var emailErrorUsed by remember { mutableStateOf(false) }
+                var emailErrorInvalid by remember { mutableStateOf(false) }
+
+                OutlinedTextField(
+                    value = accountName,
+                    onValueChange = { accountName = it },
+                    label = { Text("Nombre de la cuenta", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
+                    value = accountEmail,
+                    onValueChange = { accountEmail = it },
+                    label = { Text("Email", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (emailErrorEmpty) {
+                    Text(
+                        text = "El correo no puede estar vacío",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                if (emailErrorUsed) {
+                    Text(
+                        text = "El correo ya está en uso",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+                if (emailErrorInvalid) {
+                    Text(
+                        text = "El correo no es válido",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                OutlinedTextField(
+                    value = accountPassword,
+                    onValueChange = { accountPassword = it },
+                    label = { Text("Contraseña", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (passwordErrorEmpty) {
+                    Text(
+                        text = "La contraseña no puede estar vacía",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                OutlinedTextField(
+                    value = accountConfirmPassword,
+                    onValueChange = { accountConfirmPassword = it },
+                    label = { Text("Confirmar contraseña", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (confirmPasswordErrorMismatch) {
+                    Text(
+                        text = "Las contraseñas no coinciden",
+                        color = MaterialTheme.colorScheme.primary,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Checkbox(
+                        checked = accountPremium,
+                        onCheckedChange = { accountPremium = it },
+                        colors = CheckboxDefaults.colors(
+                            checkedColor = MaterialTheme.colorScheme.primary,
+                            uncheckedColor = MaterialTheme.colorScheme.onBackground,
+                            checkmarkColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    )
+                    Text("Premium", color = MaterialTheme.colorScheme.onBackground)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                ) {
+                    Button(onClick = onDismiss) {
+                        Text("Regresar")
+                    }
+                    Button(
+                        onClick = {
+                            emailErrorEmpty = false
+                            passwordErrorEmpty = false
+                            confirmPasswordErrorMismatch = false
+                            emailErrorUsed = false
+                            emailErrorInvalid = false
+
+                            // Revisar si correo vacio
+                            if (accountEmail.isEmpty()) {
+                                emailErrorEmpty = true
+                                return@Button
+                            }
+                            // Revisar si contrasenia vacia
+                            if (accountPassword.isEmpty()) {
+                                passwordErrorEmpty = true
+                                return@Button
+                            }
+                            // Revisar si contrasenias coinciden
+                            if (accountPassword != accountConfirmPassword) {
+                                confirmPasswordErrorMismatch = true
+                                return@Button
+                            }
+                            // Revisar si correo valido
+                            if (!Patterns.EMAIL_ADDRESS.matcher(accountEmail).matches()) {
+                                emailErrorInvalid = true
+                                return@Button
+                            }
+                            // Revisar si correo en uso
+                            if (false) { // TODO: implementar verificacion de correo en uso
+                                emailErrorUsed = true
+                                return@Button
+                            }
+                            // TODO: implementar creacion de cuenta
+                            onDismiss()
+                        }
+                    ) {
+                        Text("Crear cuenta")
                     }
                 }
             }
