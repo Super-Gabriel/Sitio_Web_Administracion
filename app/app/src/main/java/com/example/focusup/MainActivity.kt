@@ -188,9 +188,13 @@ fun CalendarScreen(context: Context) {
     
     var showTaskDialog by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
+    var showTaskCompletedDialog by remember { mutableStateOf(false) }
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
+    var showTaskCreatedDialog by remember { mutableStateOf(false) }
+
     var showAddAccountDialog by remember { mutableStateOf(false) }
+    var showAccountCreatedDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -383,6 +387,7 @@ fun CalendarScreen(context: Context) {
                                 TaskStorage.removeTaskById(context, task.id)
                             }
                             selectedTask = null
+                            showTaskCompletedDialog = true
                          },
                          colors = ButtonDefaults.buttonColors(
                             containerColor = GetTaskColorText(selectedTask!!.difficulty),
@@ -404,9 +409,17 @@ fun CalendarScreen(context: Context) {
                 )
             }
 
+            if (showTaskCompletedDialog) {
+                TaskCompletedDialog(
+                    onDismiss = { showTaskCompletedDialog = false }
+                )
+            }
+
             if (showAddTaskDialog) {
                 AddTaskDialog(
-                    onDismiss = { showAddTaskDialog = false },
+                    onDismiss = { showAddTaskDialog = false
+                        showTaskCreatedDialog = true
+                    },
                     onAddTask = { newTask ->
                         tasksList.add(newTask)
                         TaskStorage.addTask(context, newTask)
@@ -415,13 +428,28 @@ fun CalendarScreen(context: Context) {
                 )
             }
 
+            if (showTaskCreatedDialog) {
+                TaskCreatedDialog(
+                    onDismiss = { showTaskCreatedDialog = false }
+                )
+            }
+
             if (showAddAccountDialog) {
                 AddAccountDialog(
-                    onDismiss = { showAddAccountDialog = false }, // TODO: implementar creacion de cuenta
+                    onDismiss = { 
+                        showAddAccountDialog = false 
+                        showAccountCreatedDialog = true
+                    }, // TODO: implementar creacion de cuenta
                     //onAddAccount = { newAccount ->
                     //    accountsList.add(newAccount)
                     //    AccountStorage.addAccount(context, newAccount)
                     //}
+                )
+            }
+
+            if (showAccountCreatedDialog) {
+                AccountCreatedDialog(
+                    onDismiss = { showAccountCreatedDialog = false }
                 )
             }
         }
@@ -799,6 +827,78 @@ fun AddAccountDialog(
             }
         }
     }
+}
+
+// Funcion para mostrar dialogo de cuenta creada
+@Composable
+fun AccountCreatedDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Cuenta creada", color = MaterialTheme.colorScheme.onBackground) },
+        text = { Text("Su cuenta ha sido creada exitosamente.", color = MaterialTheme.colorScheme.onBackground) },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Aceptar")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+// Funcion para mostrar dialogo de tarea creada
+@Composable
+fun TaskCreatedDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tarea creada", color = MaterialTheme.colorScheme.onBackground) },
+        text = { Text("Su tarea ha sido creada exitosamente.", color = MaterialTheme.colorScheme.onBackground) },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Aceptar")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+// Funcion para mostrar dialogo de tarea completada
+@Composable
+fun TaskCompletedDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tarea completada", color = MaterialTheme.colorScheme.onBackground) },
+        text = { Text("¡Felicidades! Has completado la tarea.", color = MaterialTheme.colorScheme.onBackground) },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Aceptar")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
 }
 
 // Funcion de preview
