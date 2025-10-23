@@ -203,8 +203,11 @@ fun CalendarScreen(context: Context) {
                 actions = {
                     // Si el usuario esta logueado, mostrar boton de perfil
                     if (loggedIn) {
-                        TextButton(onClick = { /* TODO: perfil */ }) {
-                            Text("Perfil", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        TextButton(onClick = { /* TODO: recompensas */ }) {
+                            Text("Recompensas", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                        TextButton(onClick = { /* TODO: cerrar sesión */ }) {
+                            Text("Cerrar sesión", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                     // Si el usuario no esta logueado, mostrar botones de login y registro
@@ -418,11 +421,12 @@ fun CalendarScreen(context: Context) {
             if (showAddTaskDialog) {
                 AddTaskDialog(
                     onDismiss = { showAddTaskDialog = false
-                        showTaskCreatedDialog = true
                     },
                     onAddTask = { newTask ->
                         tasksList.add(newTask)
                         TaskStorage.addTask(context, newTask)
+                        showTaskCreatedDialog = true
+                        showAddTaskDialog = false
                     },
                     nextId = TaskStorage.getNextId(context)
                 )
@@ -438,8 +442,12 @@ fun CalendarScreen(context: Context) {
                 AddAccountDialog(
                     onDismiss = { 
                         showAddAccountDialog = false 
+                    },
+                    onSuccess = {
+                        showAddAccountDialog = false
                         showAccountCreatedDialog = true
-                    }, // TODO: implementar creacion de cuenta
+                    },
+                     // TODO: implementar creacion de cuenta
                     //onAddAccount = { newAccount ->
                     //    accountsList.add(newAccount)
                     //    AccountStorage.addAccount(context, newAccount)
@@ -646,7 +654,6 @@ fun AddTaskDialog(
                                 id = nextId
                             )
                             onAddTask(newTask)
-                            onDismiss()
                         }
                     ) {
                         Text("Agregar tarea")
@@ -663,6 +670,7 @@ fun AddTaskDialog(
 @Composable
 fun AddAccountDialog(
     onDismiss: () -> Unit,
+    onSuccess: () -> Unit,
     //onAddAccount: (Account) -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
@@ -712,21 +720,21 @@ fun AddAccountDialog(
                 if (emailErrorEmpty) {
                     Text(
                         text = "El correo no puede estar vacío",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
                 if (emailErrorUsed) {
                     Text(
                         text = "El correo ya está en uso",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
                 if (emailErrorInvalid) {
                     Text(
                         text = "El correo no es válido",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -740,7 +748,7 @@ fun AddAccountDialog(
                 if (passwordErrorEmpty) {
                     Text(
                         text = "La contraseña no puede estar vacía",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -754,7 +762,7 @@ fun AddAccountDialog(
                 if (confirmPasswordErrorMismatch) {
                     Text(
                         text = "Las contraseñas no coinciden",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = MaterialTheme.colorScheme.onBackground,
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -818,7 +826,7 @@ fun AddAccountDialog(
                                 return@Button
                             }
                             // TODO: implementar creacion de cuenta
-                            onDismiss()
+                            onSuccess()
                         }
                     ) {
                         Text("Crear cuenta")
@@ -832,7 +840,7 @@ fun AddAccountDialog(
 // Funcion para mostrar dialogo de cuenta creada
 @Composable
 fun AccountCreatedDialog(
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
