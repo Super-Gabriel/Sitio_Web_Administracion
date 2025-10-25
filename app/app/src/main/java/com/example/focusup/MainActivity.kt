@@ -158,6 +158,8 @@ fun CalendarScreen(context: Context) {
     }
 
     val loggedIn = false // TODO: implementar login
+    val isPremium = false // TODO: implementar cuenta premium
+    val idAccount = 0 // TODO: implementar cuenta actual
 
     val today = LocalDate.now()
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
@@ -206,7 +208,7 @@ fun CalendarScreen(context: Context) {
                         TextButton(onClick = { /* TODO: recompensas */ }) {
                             Text("Recompensas", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
-                        TextButton(onClick = { /* TODO: cerrar sesión */ }) {
+                        TextButton(onClick = { /* TODO: cerrar sesion */ }) {
                             Text("Cerrar sesión", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
@@ -446,12 +448,8 @@ fun CalendarScreen(context: Context) {
                     onSuccess = {
                         showAddAccountDialog = false
                         showAccountCreatedDialog = true
-                    },
-                     // TODO: implementar creacion de cuenta
-                    //onAddAccount = { newAccount ->
-                    //    accountsList.add(newAccount)
-                    //    AccountStorage.addAccount(context, newAccount)
-                    //}
+                        //TODO: implementar creacion de cuenta
+                    }
                 )
             }
 
