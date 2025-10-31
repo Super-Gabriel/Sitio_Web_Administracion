@@ -52,4 +52,9 @@ object AccountStorage {
         val accounts = loadAccounts(context)
         return if (accounts.isEmpty()) 1 else accounts.maxOf { it.id } + 1
     }
+
+    fun validateLogin(context: Context, email: String, password: String): Account? {
+    val accounts = loadAccounts(context)
+    return accounts.find { it.email == email && it.password == password }
+}
 }

@@ -162,6 +162,8 @@ fun CalendarScreen(context: Context) {
         } 
     }
 
+    var showLoginDialog by remember { mutableStateOf(false) }
+
     val loggedIn = false // TODO: implementar login
     val isPremium = false // TODO: implementar cuenta premium
     val idAccount = 0 // TODO: implementar cuenta actual
@@ -203,6 +205,8 @@ fun CalendarScreen(context: Context) {
     var showAddAccountDialog by remember { mutableStateOf(false) }
     var showAccountCreatedDialog by remember { mutableStateOf(false) }
 
+
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -219,7 +223,7 @@ fun CalendarScreen(context: Context) {
                     }
                     // Si el usuario no esta logueado, mostrar botones de login y registro
                     else {
-                        TextButton(onClick = { /* TODO: login */ }) {
+                        TextButton(onClick = { showLoginDialog = true }) {
                             Text("Iniciar sesión", color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                         TextButton(onClick = { showAddAccountDialog = true }) {
@@ -461,6 +465,16 @@ fun CalendarScreen(context: Context) {
             if (showAccountCreatedDialog) {
                 AccountCreatedDialog(
                     onDismiss = { showAccountCreatedDialog = false }
+                )
+            }
+
+            if (showLoginDialog){
+                LoginDialog(
+                    onDismiss = { showLoginDialog = false },
+                    onSuccess = { account ->
+                        // por implementar :p
+                        showLoginDialog = false
+                    }
                 )
             }
         }
@@ -835,6 +849,7 @@ fun AddAccountDialog(
                                 email = accountEmail,
                                 password = accountPassword,
                                 isPremium = accountPremium,
+                                points = 0,
                                 createdAt = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
                             )
                             
@@ -845,6 +860,123 @@ fun AddAccountDialog(
                         }
                     ) {
                         Text("Crear cuenta")
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Función para loguear en una cuenta
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginDialog(
+    onDismiss: () -> Unit,
+    onSuccess: (Account) -> Unit, // pasamos la cuenta logueada
+) {
+    val context = LocalContext.current
+    
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            tonalElevation = 4.dp,
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.6f) // Más pequeño que el de registro
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Text("Iniciar Sesión", style = MaterialTheme.typography.titleLarge)
+
+                var accountEmail by remember { mutableStateOf("") }
+                var accountPassword by remember { mutableStateOf("") }
+
+                var emailError by remember { mutableStateOf(false) }
+                var passwordError by remember { mutableStateOf(false) }
+                var loginError by remember { mutableStateOf(false) }
+
+                OutlinedTextField(
+                    value = accountEmail,
+                    onValueChange = { accountEmail = it },
+                    label = { Text("Email", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = emailError || loginError
+                )
+                if (emailError) {
+                    Text(
+                        text = "El correo no puede estar vacío",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                OutlinedTextField(
+                    value = accountPassword,
+                    onValueChange = { accountPassword = it },
+                    label = { Text("Contraseña", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = passwordError || loginError
+                )
+                if (passwordError) {
+                    Text(
+                        text = "La contraseña no puede estar vacía",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                if (loginError) {
+                    Text(
+                        text = "Correo o contraseña incorrectos",
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                ) {
+                    Button(onClick = onDismiss) {
+                        Text("Regresar")
+                    }
+                    Button(
+                        onClick = {
+                            // Resetear errores
+                            emailError = false
+                            passwordError = false
+                            loginError = false
+
+                            // Validaciones
+                            if (accountEmail.isEmpty()) {
+                                emailError = true
+                                return@Button
+                            }
+                            if (accountPassword.isEmpty()) {
+                                passwordError = true
+                                return@Button
+                            }
+
+                            // Intentar login
+                            val account = AccountStorage.validateLogin(context, accountEmail, accountPassword)
+                            if (account != null) {
+                                onSuccess(account)
+                            } else {
+                                loginError = true
+                            }
+                        }
+                    ) {
+                        Text("Iniciar sesión")
                     }
                 }
             }
