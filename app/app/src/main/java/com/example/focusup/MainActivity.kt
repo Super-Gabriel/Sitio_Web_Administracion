@@ -76,6 +76,7 @@ import com.example.focusup.model.Account
 import com.example.focusup.storage.AccountStorage
 import java.time.LocalDateTime
 
+import androidx.compose.material.icons.filled.Person
 
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
@@ -164,9 +165,10 @@ fun CalendarScreen(context: Context) {
 
     var showLoginDialog by remember { mutableStateOf(false) }
 
-    val loggedIn = false // TODO: implementar login
-    val isPremium = false // TODO: implementar cuenta premium
-    val idAccount = 0 // TODO: implementar cuenta actual
+    // estados para el login
+    var loggedIn by remember { mutableStateOf(false) }
+    var isPremium by remember { mutableStateOf(false) }
+    var currentAccount by remember { mutableStateOf<Account?>(null) }
 
     val today = LocalDate.now()
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
@@ -214,11 +216,39 @@ fun CalendarScreen(context: Context) {
                 actions = {
                     // Si el usuario esta logueado, mostrar boton de perfil
                     if (loggedIn) {
-                        TextButton(onClick = { /* TODO: recompensas */ }) {
-                            Text("Recompensas", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
-                        TextButton(onClick = { /* TODO: cerrar sesion */ }) {
-                            Text("Cerrar sesión", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        var expanded by remember { mutableStateOf(false) }
+                        Text("Hola, ${currentAccount?.name ?: "Usuario"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Box(
+                            modifier = Modifier
+                                .wrapContentSize(Alignment.TopEnd)
+                        ) {
+                            IconButton(onClick = { expanded = true }) {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = "Menú de usuario"
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                DropdownMenuItem(
+                                    text = { Text("Recompensas") },
+                                    onClick = { 
+                                        /* TODO: recompensas */
+                                        expanded = false 
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Cerrar sesión") },
+                                    onClick = { 
+                                        loggedIn = false
+                                        isPremium = false
+                                        currentAccount = null
+                                        expanded = false
+                                    }
+                                )
+                            }
                         }
                     }
                     // Si el usuario no esta logueado, mostrar botones de login y registro
@@ -472,7 +502,10 @@ fun CalendarScreen(context: Context) {
                 LoginDialog(
                     onDismiss = { showLoginDialog = false },
                     onSuccess = { account ->
-                        // por implementar :p
+                        // si la vista regresa success cambiamos valores de cuenta actuales
+                        currentAccount = account
+                        loggedIn = true
+                        isPremium = account.isPremium
                         showLoginDialog = false
                     }
                 )
