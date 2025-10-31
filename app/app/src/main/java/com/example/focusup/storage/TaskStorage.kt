@@ -66,4 +66,16 @@ object TaskStorage {
         return if (currentTasks.isEmpty()) 1
         else currentTasks.maxOf { it.id } + 1
     }
+
+    // Funcion para quitar un paso de una tarea
+    fun removeStepFromTask(context: Context, taskId: Int, stepIndex: Int) {
+        val currentTasks = loadTasks(context).toMutableList()
+        val task = currentTasks.find { it.id == taskId }
+        task?.let {
+            if (stepIndex in it.steps.indices) {
+                it.steps.removeAt(stepIndex)
+            }
+        }
+        saveTasks(context, currentTasks)
+    }
 }

@@ -66,6 +66,9 @@ import android.content.Context
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
+import androidx.compose.foundation.Image
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Help
 import java.util.*
 
 // Import para TaskStorage
@@ -77,6 +80,11 @@ import com.example.focusup.storage.AccountStorage
 import java.time.LocalDateTime
 
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
+
+import com.example.focusup.storage.TutorialPreferences
 
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
@@ -207,12 +215,42 @@ fun CalendarScreen(context: Context) {
     var showAddAccountDialog by remember { mutableStateOf(false) }
     var showAccountCreatedDialog by remember { mutableStateOf(false) }
 
+    var showUserManualDialog by remember { mutableStateOf(false) }
 
+    // Mostrar tutorial si no se ha visto antes
+    LaunchedEffect(Unit) {
+        val seen = TutorialPreferences.hasSeenTutorial(context)
+        if (!seen) {
+            showUserManualDialog = true
+            TutorialPreferences.setTutorialShown(context)
+        }
+    }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("FocusUp", fontWeight = FontWeight.Bold) },
+                title = {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            "FocusUp",
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        IconButton(
+                            onClick = { showUserManualDialog = true },
+                            modifier = Modifier.size(20.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.Help,
+                                contentDescription = "Ver tutorial",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                },
                 actions = {
                     // Si el usuario esta logueado, mostrar boton de perfil
                     if (loggedIn) {
@@ -276,7 +314,28 @@ fun CalendarScreen(context: Context) {
                     .padding(10.dp),
                 contentAlignment = Alignment.Center
             ) {
-                Text("© 2025 FocusUp", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        "© 2025 FocusUp",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    /*
+                    IconButton(
+                        onClick = { showUserManualDialog = true },
+                        modifier = Modifier.size(18.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Help,
+                            contentDescription = "Ver tutorial",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    */
+                }
             }
         }
     ) { innerPadding ->
@@ -417,8 +476,38 @@ fun CalendarScreen(context: Context) {
                             Text("Dificultad: ${selectedTask!!.difficulty}/5", color = MaterialTheme.colorScheme.onSecondary)
                             if (selectedTask!!.steps.isNotEmpty()) {
                                 Text("Pasos:", color = MaterialTheme.colorScheme.onSecondary)
-                                selectedTask!!.steps.forEach { step ->
-                                    Text("- $step", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSecondary)
+                                selectedTask!!.steps.forEachIndexed { index, step ->
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        Text(
+                                            text = "- $step",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSecondary,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                        IconButton(
+                                            onClick = {
+                                                // Quitar paso de la tarea
+                                                TaskStorage.removeStepFromTask(context, selectedTask!!.id, index)
+                                                // Obtenemos las tareas actualizadas
+                                                val updatedTasks = TaskStorage.loadTasks(context)
+                                                // Refrescamos la lista de tareas
+                                                tasksList.clear()
+                                                tasksList.addAll(updatedTasks)
+                                                // Actualizar la tarea seleccionada
+                                                selectedTask = updatedTasks.find { it.id == selectedTask!!.id }
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = "Marcar paso como completado",
+                                                tint = MaterialTheme.colorScheme.primary
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -508,6 +597,12 @@ fun CalendarScreen(context: Context) {
                         isPremium = account.isPremium
                         showLoginDialog = false
                     }
+                )
+            }
+
+            if (showUserManualDialog) {
+                UserManualDialog(
+                    onDismiss = { showUserManualDialog = false }
                 )
             }
         }
@@ -1083,6 +1178,91 @@ fun TaskCompletedDialog(
                 )
             ) {
                 Text("Aceptar")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+// Funcion para mostrar el manual de usuario o tutorial
+@Composable
+fun UserManualDialog(
+    onDismiss: () -> Unit,
+) {
+    var currentPage by remember { mutableStateOf(0) }
+    val totalPages = 5
+    // Titulo y descripcion de cada pagina
+    val pageContents = listOf(
+        Pair("Bienvenido a FocusUp", "¡Tu asistente personal para mantenerte enfocado y organizado!"),
+        Pair("Agregar Tareas", "Crea tareas con detalles como fecha, hora, dificultad y pasos a seguir."),
+        Pair("Visualizar Tareas", "Consulta tus tareas en un calendario mensual."),
+        Pair("Notificaciones", "Recibe recordatorios para tus tareas importantes."),
+        Pair("Cuenta Premium", "Desbloquea funciones exclusivas y mejora tu experiencia.")
+    )
+    // Imagenes de cada pagina, van en app/src/main/res/drawable/
+    val pageImages = listOf(
+        R.drawable.tutorial_1,
+        R.drawable.tutorial_2,
+        R.drawable.tutorial_3,
+        R.drawable.tutorial_4,
+        R.drawable.tutorial_5
+    )
+    // Contenido de la pagina actual
+    val currentContent = pageContents[currentPage]
+    val currentImage = pageImages[currentPage]
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(currentContent.first, color = MaterialTheme.colorScheme.onBackground) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(id = currentImage),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .size(180.dp)
+                        .clip(RoundedCornerShape(16.dp))
+                )
+                Text(
+                    currentContent.second,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center
+                )
+            }
+        },
+        confirmButton = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Boton anterior
+                if (currentPage > 0) {
+                    Button(
+                        onClick = { currentPage-- },
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        )
+                    ) {
+                        Text("Anterior")
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                // Boton siguiente o cerrar
+                Button(
+                    onClick = {
+                        if (currentPage < totalPages - 1) currentPage++ else onDismiss()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
+                    )
+                ) {
+                    Text(if (currentPage < totalPages - 1) "Siguiente" else "Cerrar")
+                }
             }
         },
         containerColor = MaterialTheme.colorScheme.surface
