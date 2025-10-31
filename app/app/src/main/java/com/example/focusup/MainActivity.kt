@@ -72,6 +72,11 @@ import java.util.*
 import com.example.focusup.storage.TaskStorage
 import java.time.format.DateTimeFormatter.ofPattern
 
+import com.example.focusup.model.Account
+import com.example.focusup.storage.AccountStorage
+import java.time.LocalDateTime
+
+
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
 private fun createNotificationChannel(context: Context) {
@@ -790,40 +795,52 @@ fun AddAccountDialog(
                     Button(onClick = onDismiss) {
                         Text("Regresar")
                     }
+                    val context = LocalContext.current
                     Button(
                         onClick = {
+                            // Resetear errores
                             emailErrorEmpty = false
                             passwordErrorEmpty = false
                             confirmPasswordErrorMismatch = false
                             emailErrorUsed = false
                             emailErrorInvalid = false
 
-                            // Revisar si correo vacio
+                            // Validaciones
                             if (accountEmail.isEmpty()) {
                                 emailErrorEmpty = true
                                 return@Button
                             }
-                            // Revisar si contrasenia vacia
                             if (accountPassword.isEmpty()) {
                                 passwordErrorEmpty = true
                                 return@Button
                             }
-                            // Revisar si contrasenias coinciden
                             if (accountPassword != accountConfirmPassword) {
                                 confirmPasswordErrorMismatch = true
                                 return@Button
                             }
-                            // Revisar si correo valido
                             if (!Patterns.EMAIL_ADDRESS.matcher(accountEmail).matches()) {
                                 emailErrorInvalid = true
                                 return@Button
                             }
                             // Revisar si correo en uso
-                            if (false) { // TODO: implementar verificacion de correo en uso
+                            if (AccountStorage.isEmailUsed(context, accountEmail)) {
                                 emailErrorUsed = true
                                 return@Button
                             }
-                            // TODO: implementar creacion de cuenta
+
+                            // Creación de cuenta
+                            val newAccount = Account(
+                                id = AccountStorage.getNextId(context),
+                                name = accountName,
+                                email = accountEmail,
+                                password = accountPassword,
+                                isPremium = accountPremium,
+                                createdAt = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME)
+                            )
+                            
+                            // Guardando en el json
+                            AccountStorage.addAccount(context, newAccount)
+                            
                             onSuccess()
                         }
                     ) {
