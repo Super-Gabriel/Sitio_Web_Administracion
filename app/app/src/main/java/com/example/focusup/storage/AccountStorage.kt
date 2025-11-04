@@ -56,5 +56,13 @@ object AccountStorage {
     fun validateLogin(context: Context, email: String, password: String): Account? {
     val accounts = loadAccounts(context)
     return accounts.find { it.email == email && it.password == password }
-}
+    }
+
+    // Funcion para dar puntos a una cuenta
+    fun addPointsToAccount(context: Context, accountId: Int, points: Int) {
+        val accounts = loadAccounts(context)
+        val account = accounts.find { it.id == accountId } ?: return
+        account.points += points
+        saveAccounts(context, accounts)
+    }
 }

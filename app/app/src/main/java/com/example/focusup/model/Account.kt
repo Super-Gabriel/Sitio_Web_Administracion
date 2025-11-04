@@ -6,6 +6,6 @@ data class Account(
     val email: String,
     val password: String, 
     val isPremium: Boolean,
-    val points: Int,
+    var points: Int,
     val createdAt: String
 )

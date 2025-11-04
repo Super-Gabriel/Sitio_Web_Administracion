@@ -70,6 +70,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Help
 import java.util.*
+import java.time.Duration
 
 // Import para TaskStorage
 import com.example.focusup.storage.TaskStorage
@@ -217,6 +218,8 @@ fun CalendarScreen(context: Context) {
 
     var showUserManualDialog by remember { mutableStateOf(false) }
 
+    var lastPointsEarned by remember { mutableStateOf(0) }
+
     // Mostrar tutorial si no se ha visto antes
     LaunchedEffect(Unit) {
         val seen = TutorialPreferences.hasSeenTutorial(context)
@@ -271,7 +274,7 @@ fun CalendarScreen(context: Context) {
                                 onDismissRequest = { expanded = false }
                             ) {
                                 DropdownMenuItem(
-                                    text = { Text("Recompensas") },
+                                    text = { Text("Recompensas, ${currentAccount?.points ?: 0}") },
                                     onClick = { 
                                         /* TODO: recompensas */
                                         expanded = false 
@@ -515,6 +518,20 @@ fun CalendarScreen(context: Context) {
                     confirmButton = {
                         Button(onClick = {
                             showTaskDialog = false
+                            lastPointsEarned = 0
+                            // Obtener puntos si el usuario esta logueado
+                            if (loggedIn) {
+                                // Calcular los puntos a otorgar
+                                val pointsEarned = CalculatePointsForTask(selectedTask!!)
+                                lastPointsEarned = pointsEarned
+                                // Actualizar puntos de la cuenta
+                                currentAccount?.let { account ->
+                                    AccountStorage.addPointsToAccount(context, account.id, pointsEarned)
+                                    // Refrescar la cuenta actual
+                                    val updatedAccount = AccountStorage.validateLogin(context, account.email, account.password)
+                                    currentAccount = updatedAccount
+                                }
+                            }
                             selectedTask?.let { task ->
                                 tasksList.remove(task)
                                 TaskStorage.removeTaskById(context, task.id)
@@ -544,6 +561,7 @@ fun CalendarScreen(context: Context) {
 
             if (showTaskCompletedDialog) {
                 TaskCompletedDialog(
+                    pointsEarned = lastPointsEarned,
                     onDismiss = { showTaskCompletedDialog = false }
                 )
             }
@@ -1163,12 +1181,19 @@ fun TaskCreatedDialog(
 // Funcion para mostrar dialogo de tarea completada
 @Composable
 fun TaskCompletedDialog(
+    pointsEarned: Int,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Tarea completada", color = MaterialTheme.colorScheme.onBackground) },
-        text = { Text("¡Felicidades! Has completado la tarea.", color = MaterialTheme.colorScheme.onBackground) },
+        text = {
+            if (pointsEarned > 0) {
+                Text("¡Felicidades! Has completado la tarea y ganado $pointsEarned puntos.", color = MaterialTheme.colorScheme.onBackground)
+            } else {
+                Text("¡Felicidades! Has completado la tarea.", color = MaterialTheme.colorScheme.onBackground)
+            }
+        },
         confirmButton = {
             Button(
                 onClick = onDismiss,
@@ -1304,4 +1329,30 @@ fun GetTaskColorText(difficulty: Int): Color {
         1 -> SpecialBlue2
         else -> MaterialTheme.colorScheme.secondary
     }
+}
+
+// Funcion para calcular puntos al completar una tarea
+@RequiresApi(Build.VERSION_CODES.O)
+fun CalculatePointsForTask(task: Task): Int {
+    // Obtenemos la fecha actual
+    val now = LocalDateTime.now()
+    // Obtenemos la fecha de entrega
+    val taskDateTime = LocalDateTime.of(task.dueDate, task.dueTime)
+    // Obtenemos la dificultad
+    val difficulty = task.difficulty
+    // Obtenemos los puntos base por dificultad
+    val basePoints = when (difficulty) {
+        1 -> 10
+        2 -> 20
+        3 -> 30
+        4 -> 40
+        5 -> 50
+        else -> 0
+    }
+    // Obtenemos cuantos dias de anticipacion se completo la tarea
+    val daysEarly = Duration.between(now, taskDateTime).toDays().toInt()
+    // Limitamos los dias de anticipacion entre 0 y 7
+    val limitedDaysEarly = daysEarly.coerceIn(0, 7)
+    // Regresamos los puntos finales
+    return basePoints + (limitedDaysEarly * difficulty)
 }
