@@ -51,11 +51,22 @@ object TaskStorage {
         }
     }
 
-    // Agregar nueva tarea
-    fun addTask(context: Context, task: Task) {
+    // Agregar nueva tarea con límite según tipo de usuario
+    fun addTask(context: Context, task: Task, isPremium: Boolean) {
         val currentTasks = loadTasks(context).toMutableList()
+
+        // Límite de tareas según suscripción
+        val maxTasks = if (isPremium) 50 else 10
+
+        if (currentTasks.size >= maxTasks) {
+            println("Límite de tareas alcanzado (${currentTasks.size}/$maxTasks)")
+            // Podrías mostrar un Toast o Snackbar si lo llamas desde un Composable o Activity
+            return
+        }
+
         currentTasks.add(task)
         saveTasks(context, currentTasks)
+        println("Tarea agregada correctamente. Total: ${currentTasks.size}/$maxTasks")
     }
 
     // Eliminar tarea por ID
@@ -98,3 +109,4 @@ object TaskStorage {
         }
     }
 }
+

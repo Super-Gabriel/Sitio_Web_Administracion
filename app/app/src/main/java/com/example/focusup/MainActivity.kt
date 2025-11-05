@@ -1394,7 +1394,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
--------------------- CALENDAR SCREEN --------------------
+// -------------------- CALENDAR SCREEN --------------------
 @Composable
 fun CalendarScreen(context: Context) {
     val tasksList = remember { mutableStateListOf<Task>().apply { addAll(TaskStorage.loadTasks(context)) } }
@@ -1416,7 +1416,7 @@ fun CalendarScreen(context: Context) {
         }
     }
 
-    Funcion para editar tareas
+    //Función para editar tareas
     taskToEdit?.let { task ->
         EditTaskDialog(
             context = context,
@@ -1429,5 +1429,23 @@ fun CalendarScreen(context: Context) {
                 taskToEdit = null
             }
         )
+    }
+
+    // Funcion gregar tareas automáticamente
+    LaunchedEffect(Unit) {
+        val nuevaTarea = Task(
+            id = TaskStorage.getNextId(context),
+            title = "Estudiar Kotlin",
+            description = "Repaso rápido de Compose",
+            steps = mutableListOf(),
+            date = LocalDate.now(),
+            time = LocalTime.now()
+        )
+
+        // Cambia esto para probar usuarios premium o no premium
+        TaskStorage.isPremiumUser = false //  No premium (máximo 10)
+        // TaskStorage.isPremiumUser = true //  Premium (máximo 50)
+
+        TaskStorage.addTask(context, nuevaTarea)
     }
 }
