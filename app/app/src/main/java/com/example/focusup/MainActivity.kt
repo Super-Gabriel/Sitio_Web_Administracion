@@ -1357,7 +1357,7 @@ fun CalculatePointsForTask(task: Task): Int {
     return basePoints + (limitedDaysEarly * difficulty)
 }
 
-/*
+
 package com.example.focusup
 
 import android.content.Context
@@ -1394,7 +1394,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-// -------------------- CALENDAR SCREEN --------------------
+-------------------- CALENDAR SCREEN --------------------
 @Composable
 fun CalendarScreen(context: Context) {
     val tasksList = remember { mutableStateListOf<Task>().apply { addAll(TaskStorage.loadTasks(context)) } }
@@ -1416,7 +1416,7 @@ fun CalendarScreen(context: Context) {
         }
     }
 
-    // Diálogo para editar tareas
+    Funcion para editar tareas
     taskToEdit?.let { task ->
         EditTaskDialog(
             context = context,
@@ -1431,4 +1431,3 @@ fun CalendarScreen(context: Context) {
         )
     }
 }
-*/
