@@ -1,17 +1,20 @@
 package com.example.focusup.storage
 
 import android.content.Context
+import android.widget.Toast
 import com.example.focusup.model.Task
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
-import java.io.*
+import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
 
 object TaskStorage {
     private const val FILENAME = "tasks.json"
-    
+    private const val MAX_TASKS_FREE = 10
+    private const val MAX_TASKS_PREMIUM = 50
+
     // Creando Gson con los adaptadores personalizados
     private val gson: Gson = GsonBuilder()
         .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
@@ -52,21 +55,27 @@ object TaskStorage {
     }
 
     // Agregar nueva tarea con límite según tipo de usuario
-    fun addTask(context: Context, task: Task, isPremium: Boolean) {
+    fun addTask(context: Context, task: Task, isPremium: Boolean): Boolean {
         val currentTasks = loadTasks(context).toMutableList()
 
-        // Límite de tareas según suscripción
-        val maxTasks = if (isPremium) 50 else 10
+        // Determinar límite según tipo de cuenta
+        val maxTasks = if (isPremium) MAX_TASKS_PREMIUM else MAX_TASKS_FREE
 
+        // Validar si alcanzó el límite
         if (currentTasks.size >= maxTasks) {
-            println("Límite de tareas alcanzado (${currentTasks.size}/$maxTasks)")
-            // Podrías mostrar un Toast o Snackbar si lo llamas desde un Composable o Activity
-            return
+            val message = "Límite de tareas alcanzado (${currentTasks.size}/$maxTasks)"
+            println("⚠️ $message")
+
+            // Mostrar Toast con mensaje al usuario
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            return false
         }
 
+        // Agregar nueva tarea y guardar
         currentTasks.add(task)
         saveTasks(context, currentTasks)
         println("Tarea agregada correctamente. Total: ${currentTasks.size}/$maxTasks")
+        return true
     }
 
     // Eliminar tarea por ID
@@ -74,6 +83,7 @@ object TaskStorage {
         val currentTasks = loadTasks(context).toMutableList()
         currentTasks.removeAll { it.id == taskId }
         saveTasks(context, currentTasks)
+        println("Tarea eliminada con ID: $taskId")
     }
 
     // Obtener siguiente ID disponible
@@ -90,12 +100,12 @@ object TaskStorage {
         task?.let {
             if (stepIndex in it.steps.indices) {
                 it.steps.removeAt(stepIndex)
+                println("✂️ Paso eliminado de la tarea ${task.id} en posición $stepIndex")
             }
         }
         saveTasks(context, currentTasks)
     }
 
-    // ------------------- NUEVA FUNCIÓN -------------------
     // Actualizar tarea existente
     fun updateTask(context: Context, task: Task) {
         val currentTasks = loadTasks(context).toMutableList()
@@ -109,4 +119,3 @@ object TaskStorage {
         }
     }
 }
-

@@ -1431,21 +1431,25 @@ fun CalendarScreen(context: Context) {
         )
     }
 
-    // Funcion gregar tareas automáticamente
-    LaunchedEffect(Unit) {
-        val nuevaTarea = Task(
-            id = TaskStorage.getNextId(context),
-            title = "Estudiar Kotlin",
-            description = "Repaso rápido de Compose",
-            steps = mutableListOf(),
-            date = LocalDate.now(),
-            time = LocalTime.now()
-        )
+   // Función para agregar tareas automáticamente
+LaunchedEffect(Unit) {
+    val nuevaTarea = Task(
+        id = TaskStorage.getNextId(context),
+        title = "Estudiar Kotlin",
+        description = "Repaso rápido de Compose",
+        steps = mutableListOf(),
+        date = LocalDate.now(),
+        time = LocalTime.now()
+    )
 
-        // Cambia esto para probar usuarios premium o no premium
-        TaskStorage.isPremiumUser = false //  No premium (máximo 10)
-        // TaskStorage.isPremiumUser = true //  Premium (máximo 50)
+    // usuarios premium o no premium
+    val isPremiumUser = false //  No premium (máximo 10)
+    // val isPremiumUser = true //  Premium (máximo 50)
 
-        TaskStorage.addTask(context, nuevaTarea)
+    val success = TaskStorage.addTask(context, nuevaTarea, isPremiumUser)
+    if (success) {
+        tasksList.add(nuevaTarea)
     }
+}
+
 }
