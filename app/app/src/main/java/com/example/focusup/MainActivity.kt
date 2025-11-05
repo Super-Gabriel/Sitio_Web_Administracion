@@ -1355,4 +1355,78 @@ fun CalculatePointsForTask(task: Task): Int {
     val limitedDaysEarly = daysEarly.coerceIn(0, 7)
     // Regresamos los puntos finales
     return basePoints + (limitedDaysEarly * difficulty)
+    package com.example.focusup
+
+import android.content.Context
+import android.os.Build
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.example.focusup.model.Task
+import com.example.focusup.storage.TaskStorage
+import com.example.focusup.ui.EditTaskDialog
+import com.example.focusup.ui.theme.FocusUpTheme
+
+@RequiresApi(Build.VERSION_CODES.O)
+class MainActivity : ComponentActivity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContent {
+            FocusUpTheme {
+                // Aquí llamamos a la pantalla de calendario
+                CalendarScreen(context = this)
+            }
+        }
+    }
+}
+
+// -------------------- CALENDAR SCREEN --------------------
+@Composable
+fun CalendarScreen(context: Context) {
+    val tasksList = remember { mutableStateListOf<Task>().apply { addAll(TaskStorage.loadTasks(context)) } }
+    var taskToEdit by remember { mutableStateOf<Task?>(null) }
+
+    LazyColumn {
+        items(tasksList) { task ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                onClick = { taskToEdit = task }
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(text = task.title, style = MaterialTheme.typography.titleMedium)
+                    Text(text = task.description, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+        }
+    }
+
+    // Diálogo para editar tareas
+    taskToEdit?.let { task ->
+        EditTaskDialog(
+            context = context,
+            task = task,
+            onDismiss = { taskToEdit = null },
+            onSave = { updatedTask ->
+                TaskStorage.updateTask(context, updatedTask)
+                val index = tasksList.indexOfFirst { it.id == updatedTask.id }
+                if (index != -1) tasksList[index] = updatedTask
+                taskToEdit = null
+            }
+        )
+    }
+}
+
 }

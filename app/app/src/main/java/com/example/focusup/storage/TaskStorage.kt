@@ -18,6 +18,7 @@ object TaskStorage {
         .registerTypeAdapter(LocalTime::class.java, LocalTimeAdapter())
         .create()
 
+    // Guardar lista completa de tareas
     fun saveTasks(context: Context, tasks: List<Task>) {
         try {
             val file = File(context.filesDir, FILENAME)
@@ -30,6 +31,7 @@ object TaskStorage {
         }
     }
 
+    // Cargar lista completa de tareas
     fun loadTasks(context: Context): List<Task> {
         return try {
             val file = File(context.filesDir, FILENAME)
@@ -49,25 +51,28 @@ object TaskStorage {
         }
     }
 
+    // Agregar nueva tarea
     fun addTask(context: Context, task: Task) {
         val currentTasks = loadTasks(context).toMutableList()
         currentTasks.add(task)
         saveTasks(context, currentTasks)
     }
 
+    // Eliminar tarea por ID
     fun removeTaskById(context: Context, taskId: Int) {
         val currentTasks = loadTasks(context).toMutableList()
         currentTasks.removeAll { it.id == taskId }
         saveTasks(context, currentTasks)
     }
 
+    // Obtener siguiente ID disponible
     fun getNextId(context: Context): Int {
         val currentTasks = loadTasks(context)
         return if (currentTasks.isEmpty()) 1
         else currentTasks.maxOf { it.id } + 1
     }
 
-    // Funcion para quitar un paso de una tarea
+    // Quitar un paso de una tarea (si tiene steps)
     fun removeStepFromTask(context: Context, taskId: Int, stepIndex: Int) {
         val currentTasks = loadTasks(context).toMutableList()
         val task = currentTasks.find { it.id == taskId }
@@ -77,5 +82,19 @@ object TaskStorage {
             }
         }
         saveTasks(context, currentTasks)
+    }
+
+    // ------------------- NUEVA FUNCIÓN -------------------
+    // Actualizar tarea existente
+    fun updateTask(context: Context, task: Task) {
+        val currentTasks = loadTasks(context).toMutableList()
+        val index = currentTasks.indexOfFirst { it.id == task.id }
+        if (index != -1) {
+            currentTasks[index] = task
+            saveTasks(context, currentTasks)
+            println("Tarea actualizada: ${task.id}")
+        } else {
+            println("Tarea no encontrada para actualizar: ${task.id}")
+        }
     }
 }
