@@ -27,8 +27,8 @@ fun EditTaskDialog(
 ) {
     var title by remember { mutableStateOf(task.title) }
     var description by remember { mutableStateOf(task.description) }
-    var date by remember { mutableStateOf(task.date) }
-    var time by remember { mutableStateOf(task.time) }
+    var date by remember { mutableStateOf(task.dueDate) }
+    var time by remember { mutableStateOf(task.dueTime) }
 
     val localContext = LocalContext.current
     val calendar = remember { Calendar.getInstance() }
@@ -100,8 +100,8 @@ fun EditTaskDialog(
                         val updatedTask = task.copy(
                             title = title,
                             description = description,
-                            date = date,
-                            time = time
+                            dueDate = date,
+                            dueTime = time
                         )
                         TaskStorage.updateTask(context, updatedTask)
                         onSave(updatedTask)
