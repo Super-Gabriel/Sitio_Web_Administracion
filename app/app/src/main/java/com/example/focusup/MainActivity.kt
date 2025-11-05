@@ -809,7 +809,7 @@ fun AddTaskDialog(
                         onClick = {
                             val newTask = Task(
                                 title = if (taskName == "") "Tarea sin nombre" else taskName,
-                                description = if (taskDescription == "") "Descripcion de la tarea" else taskDescription,
+                                description = if (taskDescription == "") "Tarea sin descripcion" else taskDescription,
                                 dueDate = taskDueDate,
                                 dueTime = taskDueTime.withSecond(0).withNano(0),
                                 difficulty = selectedDifficulty,
@@ -1355,7 +1355,10 @@ fun CalculatePointsForTask(task: Task): Int {
     val limitedDaysEarly = daysEarly.coerceIn(0, 7)
     // Regresamos los puntos finales
     return basePoints + (limitedDaysEarly * difficulty)
-    package com.example.focusup
+}
+
+/*
+package com.example.focusup
 
 import android.content.Context
 import android.os.Build
@@ -1428,5 +1431,4 @@ fun CalendarScreen(context: Context) {
         )
     }
 }
-
-}
+*/
