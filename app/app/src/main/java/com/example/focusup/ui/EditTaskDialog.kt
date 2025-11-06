@@ -16,7 +16,6 @@ import com.example.focusup.storage.TaskStorage
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
-import java.util.*
 
 @Composable
 fun EditTaskDialog(
@@ -25,87 +24,112 @@ fun EditTaskDialog(
     onDismiss: () -> Unit,
     onSave: (Task) -> Unit
 ) {
+    // Estados iniciales con los valores actuales de la tarea
     var title by remember { mutableStateOf(task.title) }
     var description by remember { mutableStateOf(task.description) }
     var date by remember { mutableStateOf(task.dueDate) }
     var time by remember { mutableStateOf(task.dueTime) }
 
     val localContext = LocalContext.current
-    val calendar = remember { Calendar.getInstance() }
 
-    Dialog(onDismissRequest = { onDismiss() }) {
+    Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.background,
-            modifier = Modifier.padding(16.dp)
+            tonalElevation = 4.dp,
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                // Título
-                TextField(
+
+                Text(
+                    text = "Editar tarea",
+                    style = MaterialTheme.typography.titleLarge
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Campo de título
+                OutlinedTextField(
                     value = title,
                     onValueChange = { title = it },
                     label = { Text("Título") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Descripción
-                TextField(
+                // Campo de descripción
+                OutlinedTextField(
                     value = description,
                     onValueChange = { description = it },
                     label = { Text("Descripción") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Fecha
-                TextButton(onClick = {
-                    DatePickerDialog(
-                        localContext,
-                        { _, year, month, dayOfMonth ->
-                            date = LocalDate.of(year, month + 1, dayOfMonth)
-                        },
-                        calendar.get(Calendar.YEAR),
-                        calendar.get(Calendar.MONTH),
-                        calendar.get(Calendar.DAY_OF_MONTH)
-                    ).show()
-                }) {
+                // Selector de fecha
+                TextButton(
+                    onClick = {
+                        DatePickerDialog(
+                            localContext,
+                            { _, year, month, dayOfMonth ->
+                                date = LocalDate.of(year, month + 1, dayOfMonth)
+                            },
+                            date.year,
+                            date.monthValue - 1,
+                            date.dayOfMonth
+                        ).show()
+                    }
+                ) {
                     Text("Fecha: ${date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))}")
                 }
 
-                // Hora
-                TextButton(onClick = {
-                    TimePickerDialog(
-                        localContext,
-                        { _, hourOfDay, minute ->
-                            time = LocalTime.of(hourOfDay, minute)
-                        },
-                        calendar.get(Calendar.HOUR_OF_DAY),
-                        calendar.get(Calendar.MINUTE),
-                        true
-                    ).show()
-                }) {
+                // Selector de hora
+                TextButton(
+                    onClick = {
+                        TimePickerDialog(
+                            localContext,
+                            { _, hourOfDay, minute ->
+                                time = LocalTime.of(hourOfDay, minute)
+                            },
+                            time.hour,
+                            time.minute,
+                            true
+                        ).show()
+                    }
+                ) {
                     Text("Hora: ${time.format(DateTimeFormatter.ofPattern("HH:mm"))}")
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botones Cancelar / Guardar
+                // Botones inferiores
                 Row(
                     horizontalArrangement = Arrangement.End,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    TextButton(onClick = { onDismiss() }) { Text("Cancelar") }
-                    TextButton(onClick = {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancelar")
+                    }
+                    Button(onClick = {
                         val updatedTask = task.copy(
-                            title = title,
-                            description = description,
+                            title = title.ifBlank { "Tarea sin título" },
+                            description = description.ifBlank { "Sin descripción" },
                             dueDate = date,
-                            dueTime = time
+                            dueTime = time.withSecond(0).withNano(0)
                         )
+
+                        // Actualizar tarea en almacenamiento
                         TaskStorage.updateTask(context, updatedTask)
+
+                        // Enviar cambios de regreso
                         onSave(updatedTask)
-                    }) { Text("Guardar") }
+                    }) {
+                        Text("Guardar cambios")
+                    }
                 }
             }
         }
