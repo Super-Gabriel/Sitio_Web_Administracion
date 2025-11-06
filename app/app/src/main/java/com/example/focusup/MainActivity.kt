@@ -212,6 +212,8 @@ fun CalendarScreen(context: Context) {
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var showTaskCreatedDialog by remember { mutableStateOf(false) }
+    var showTaskNotCreatedDialogNonPremium by remember { mutableStateOf(false) }
+    var showTaskNotCreatedDialogPremium by remember { mutableStateOf(false) }
 
     var showAddAccountDialog by remember { mutableStateOf(false) }
     var showAccountCreatedDialog by remember { mutableStateOf(false) }
@@ -571,9 +573,20 @@ fun CalendarScreen(context: Context) {
                     onDismiss = { showAddTaskDialog = false
                     },
                     onAddTask = { newTask ->
-                        tasksList.add(newTask)
-                        TaskStorage.addTask(context, newTask)
-                        showTaskCreatedDialog = true
+                        val result = TaskStorage.addTask(context, newTask, isPremium)
+                        if (result) {
+                            showTaskCreatedDialog = true
+                        } else {
+                            if (isPremium) {
+                                showTaskNotCreatedDialogPremium = true
+                            } else {
+                                showTaskNotCreatedDialogNonPremium = true
+                            }
+                        }
+                        // Refrescamos la lista de tareas
+                        val updatedTasks = TaskStorage.loadTasks(context)
+                        tasksList.clear()
+                        tasksList.addAll(updatedTasks)
                         showAddTaskDialog = false
                     },
                     nextId = TaskStorage.getNextId(context)
@@ -583,6 +596,18 @@ fun CalendarScreen(context: Context) {
             if (showTaskCreatedDialog) {
                 TaskCreatedDialog(
                     onDismiss = { showTaskCreatedDialog = false }
+                )
+            }
+
+            if (showTaskNotCreatedDialogNonPremium) {
+                TaskNotCreatedDialogNonPremium(
+                    onDismiss = { showTaskNotCreatedDialogNonPremium = false }
+                )
+            }
+
+            if (showTaskNotCreatedDialogPremium) {
+                TaskNotCreatedDialogPremium(
+                    onDismiss = { showTaskNotCreatedDialogPremium = false }
                 )
             }
 
@@ -1178,6 +1203,60 @@ fun TaskCreatedDialog(
     )
 }
 
+// Funcion para mostrar dialogo de tarea no creada por limite alcanzado, para usuarios no premium
+@Composable
+fun TaskNotCreatedDialogNonPremium(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tarea no creada", color = MaterialTheme.colorScheme.onBackground) },
+        text = {
+            Text("No se pudo crear la tarea. Ha alcanzado el límite de tareas.\nConsidera completar tareas existentes o usar una cuenta Premium para tener más tareas activas.",
+            color = MaterialTheme.colorScheme.onBackground)
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Aceptar")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
+// Funcion para mostrar dialogo de tarea no creada por limite alcanzado, para usuarios  premium
+@Composable
+fun TaskNotCreatedDialogPremium(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tarea no creada", color = MaterialTheme.colorScheme.onBackground) },
+        text = {
+            Text("No se pudo crear la tarea. Ha alcanzado el límite de tareas.\nConsidera completar tareas existentes.",
+            color = MaterialTheme.colorScheme.onBackground)
+        },
+        confirmButton = {
+            Button(
+                onClick = onDismiss,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary
+                )
+            ) {
+                Text("Aceptar")
+            }
+        },
+        containerColor = MaterialTheme.colorScheme.surface
+    )
+}
+
 // Funcion para mostrar dialogo de tarea completada
 @Composable
 fun TaskCompletedDialog(
@@ -1357,6 +1436,7 @@ fun CalculatePointsForTask(task: Task): Int {
     return basePoints + (limitedDaysEarly * difficulty)
 }
 
+/*
 
 package com.example.focusup
 
@@ -1432,24 +1512,26 @@ fun CalendarScreen(context: Context) {
     }
 
    // Función para agregar tareas automáticamente
-LaunchedEffect(Unit) {
-    val nuevaTarea = Task(
-        id = TaskStorage.getNextId(context),
-        title = "Estudiar Kotlin",
-        description = "Repaso rápido de Compose",
-        steps = mutableListOf(),
-        date = LocalDate.now(),
-        time = LocalTime.now()
-    )
+    LaunchedEffect(Unit) {
+        val nuevaTarea = Task(
+            id = TaskStorage.getNextId(context),
+            title = "Estudiar Kotlin",
+            description = "Repaso rápido de Compose",
+            steps = mutableListOf(),
+            date = LocalDate.now(),
+            time = LocalTime.now()
+        )
 
-    // usuarios premium o no premium
-    val isPremiumUser = false //  No premium (máximo 10)
-    // val isPremiumUser = true //  Premium (máximo 50)
+        // usuarios premium o no premium
+        val isPremiumUser = false //  No premium (máximo 10)
+        // val isPremiumUser = true //  Premium (máximo 50)
 
-    val success = TaskStorage.addTask(context, nuevaTarea, isPremiumUser)
-    if (success) {
-        tasksList.add(nuevaTarea)
+        val success = TaskStorage.addTask(context, nuevaTarea, isPremiumUser)
+        if (success) {
+            tasksList.add(nuevaTarea)
+        }
     }
-}
 
 }
+
+*/
