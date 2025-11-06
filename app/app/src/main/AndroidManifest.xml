@@ -12,7 +12,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.FocusUp">
         <activity
-            android:name=".MainActivity"
+            android:name="com.focusup.focusupapp.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.FocusUp">
@@ -23,7 +23,7 @@
             </intent-filter>
         </activity>
         <receiver
-            android:name=".ReminderReceiver"
+            android:name="com.focusup.focusupapp.ReminderReceiver"
             android:exported="true" />
     </application>
 
