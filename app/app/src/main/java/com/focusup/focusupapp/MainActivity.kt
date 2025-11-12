@@ -67,6 +67,8 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Intent
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Help
 import java.util.*
@@ -81,8 +83,11 @@ import com.focusup.focusupapp.storage.AccountStorage
 import java.time.LocalDateTime
 
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import com.focusup.focusupapp.storage.AppSettings
+import com.focusup.focusupapp.ui.theme.LocalThemeId
 
 import com.focusup.focusupapp.storage.TutorialPreferences
 
@@ -100,7 +105,7 @@ private fun createNotificationChannel(context: Context) {
     manager.createNotificationChannel(channel)
 }
 
-// Recordatorio diario a las 9:00 AM
+// Recordatorio diario
 @RequiresApi(Build.VERSION_CODES.O)
 fun scheduleDailyReminder(context: Context) {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -111,11 +116,16 @@ fun scheduleDailyReminder(context: Context) {
         intent,
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
-    // Configura la hora 9:00 a.m.
+
+    // Obtenemos la hora y minuto guardados en preferencias
+    val hour = AppSettings.getReminderHour(context)
+    val minute = AppSettings.getReminderMinute(context)
+
+    // Configura la hora guardada en preferencias
     val calendar = Calendar.getInstance().apply {
         timeInMillis = System.currentTimeMillis()
-        set(Calendar.HOUR_OF_DAY, 9)
-        set(Calendar.MINUTE, 0)
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
         set(Calendar.SECOND, 0)
     }
     // En caso de que la hora ya haya pasado, programa para el dia siguiente
@@ -152,9 +162,13 @@ class MainActivity : ComponentActivity() {
         }
         createNotificationChannel(this)
         scheduleDailyReminder(this)
+        val savedTheme = AppSettings.getTheme(this)
         setContent {
-            FocusUpTheme {
-                CalendarScreen(context = this)
+            val themeState = remember { mutableStateOf(savedTheme) }
+            CompositionLocalProvider(LocalThemeId provides themeState) {
+                FocusUpTheme {
+                    CalendarScreen(context = this)
+                }
             }
         }
     }
@@ -221,6 +235,8 @@ fun CalendarScreen(context: Context) {
 
     var lastPointsEarned by remember { mutableStateOf(0) }
 
+    var showSettingsDialog by remember { mutableStateOf(false) }
+
     // Mostrar tutorial si no se ha visto antes
     LaunchedEffect(Unit) {
         val seen = TutorialPreferences.hasSeenTutorial(context)
@@ -250,6 +266,13 @@ fun CalendarScreen(context: Context) {
                             Icon(
                                 imageVector = Icons.Filled.Help,
                                 contentDescription = "Ver tutorial",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = { showSettingsDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Filled.Settings,
+                                contentDescription = "Configuración",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -646,6 +669,10 @@ fun CalendarScreen(context: Context) {
                 UserManualDialog(
                     onDismiss = { showUserManualDialog = false }
                 )
+            }
+
+            if (showSettingsDialog) {
+                SettingsDialog(onDismiss = { showSettingsDialog = false })
             }
         }
     }
@@ -1370,6 +1397,123 @@ fun UserManualDialog(
         },
         containerColor = MaterialTheme.colorScheme.surface
     )
+}
+
+// Funcion para mostrar el dialogo de configuraciones
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun SettingsDialog(
+    onDismiss: () -> Unit
+) {
+    val context = LocalContext.current
+    val themeState = LocalThemeId.current
+    var hour by remember { mutableStateOf(AppSettings.getReminderHour(context)) }
+    var minute by remember { mutableStateOf(AppSettings.getReminderMinute(context)) }
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            tonalElevation = 4.dp,
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.7f)
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(20.dp)
+            ) {
+                Text(
+                    "Configuraciones",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Column {
+                    Text(
+                        "Hora de notificación actual: %02d:%02d".format(hour, minute),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = {
+                            TimePickerDialog(
+                                context,
+                                { _, selectedHour: Int, selectedMinute: Int ->
+                                    AppSettings.saveReminderTime(context, selectedHour, selectedMinute)
+                                    scheduleDailyReminder(context)
+                                    hour = selectedHour
+                                    minute = selectedMinute
+                                },
+                                hour,
+                                minute,
+                                true
+                            ).show()
+                        }
+                    ) {
+                        Text("Modificar hora")
+                    }
+                }
+                var expanded by remember { mutableStateOf(false) }
+                val themes = listOf(
+                    "Claro 1" to 1,
+                    "Oscuro 1" to 2,
+                    "Claro 2" to 3,
+                    "Oscuro 2" to 4
+                )
+                val selectedThemeLabel = themes.firstOrNull { it.second == themeState.value }?.first ?: "Seleccionar tema"
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text("Tema de la app", color = MaterialTheme.colorScheme.onBackground)
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                        value = selectedThemeLabel,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Selecciona un tema") },
+                        trailingIcon = {
+                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                        },
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            themes.forEach { (label, id) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = {
+                                        AppSettings.saveTheme(context, id)
+                                        themeState.value = id
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(10.dp))
+                Button(
+                    onClick = onDismiss,
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Cerrar")
+                }
+            }
+        }
+    }
 }
 
 // Funcion de preview

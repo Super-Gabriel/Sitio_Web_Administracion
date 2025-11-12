@@ -92,34 +92,18 @@ private val DarkColorScheme2 = darkColorScheme(
 
 @Composable
 fun FocusUpTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    // Dynamic color is available on Android 12+
-    dynamicColor: Boolean = true,
     content: @Composable () -> Unit
 ) {
-    /*
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
+    val themeState = LocalThemeId.current // viene de ThemeState.kt
+    val themeId = themeState.value
 
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-    */
-    /*
-    // Generamos un numero aleatorio entre 1 y 2
-    val numero = (1..2).random()
-    val colorScheme = when {
-        darkTheme && numero == 1 -> DarkColorScheme
-        darkTheme && numero == 2 -> DarkColorScheme2
-        !darkTheme && numero == 1 -> LightColorScheme
+    val colorScheme = when (themeId) {
+        1 -> LightColorScheme2
+        2 -> DarkColorScheme2
+        3 -> LightColorScheme
+        4 -> DarkColorScheme
         else -> LightColorScheme2
     }
-    */
-    //val colorScheme = DarkColorScheme2
-    val colorScheme = if(darkTheme) DarkColorScheme2 else LightColorScheme2
 
     MaterialTheme(
         colorScheme = colorScheme,

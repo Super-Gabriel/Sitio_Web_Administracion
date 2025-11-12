@@ -1,5 +1,6 @@
 package com.focusup.focusupapp
 
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -42,6 +43,19 @@ class ReminderReceiver : BroadcastReceiver() {
         val originalLogo = BitmapFactory.decodeResource(context.resources, R.drawable.logo)
         val circularLogo = getCircularBitmap(originalLogo)
 
+        // Intent para abrir la MainActivity al tocar la notificacion
+        val openAppIntent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        }
+
+        // PendingIntent para la notificacion
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            0,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
         val notification = NotificationCompat.Builder(context, "TASK_REMINDER_CHANNEL")
             .setSmallIcon(R.drawable.ic_notification)
             .setLargeIcon(circularLogo)
@@ -49,6 +63,7 @@ class ReminderReceiver : BroadcastReceiver() {
             .setContentText(notificationText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(notificationText))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .build()
 
