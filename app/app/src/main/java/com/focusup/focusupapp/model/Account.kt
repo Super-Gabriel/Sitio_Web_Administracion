@@ -6,6 +6,7 @@ data class Account(
     val email: String,
     val password: String, 
     val isPremium: Boolean,
-    var points: Int,
+    var points: Int = 0,
+    var purchasedRewards: MutableList<Int> = mutableListOf(),
     val createdAt: String
 )

@@ -62,4 +62,23 @@ object AccountStorage {
         account.points += points
         saveAccounts(context, accounts)
     }
+
+    fun purchaseReward(context: Context, accountId: Int, rewardId: Int, cost: Int): Account? {
+        val accounts = loadAccounts(context).toMutableList()
+        val idx = accounts.indexOfFirst { it.id == accountId }
+        if (idx < 0) return null
+        val acc = accounts[idx]
+
+        if (acc.points < cost) return null
+
+        acc.points = (acc.points - cost).coerceAtLeast(0)
+
+        if (acc.purchasedRewards == null) acc.purchasedRewards = mutableListOf()
+        if (!acc.purchasedRewards.contains(rewardId)) acc.purchasedRewards.add(rewardId)
+
+        accounts[idx] = acc
+        saveAccounts(context, accounts)
+        return acc
+    }
+
 }
