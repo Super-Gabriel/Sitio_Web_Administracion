@@ -30,6 +30,7 @@ import com.focusup.focusupapp.ui.theme.FocusUpTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalConfiguration
@@ -39,7 +40,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.BorderStroke
 import android.util.Patterns
+import android.widget.Toast
 
 import java.time.LocalDate
 import java.time.YearMonth
@@ -84,10 +87,12 @@ import java.time.LocalDateTime
 
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import com.focusup.focusupapp.storage.AppSettings
 import com.focusup.focusupapp.ui.theme.LocalThemeId
+import androidx.compose.foundation.interaction.MutableInteractionSource
 
 import com.focusup.focusupapp.storage.TutorialPreferences
 
@@ -179,10 +184,10 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CalendarScreen(context: Context) {
     // Cargar tareas desde el almacenamiento
-    val tasksList = remember { 
-        mutableStateListOf<Task>().apply { 
-            addAll(TaskStorage.loadTasks(context)) 
-        } 
+    val tasksList = remember {
+        mutableStateListOf<Task>().apply {
+            addAll(TaskStorage.loadTasks(context))
+        }
     }
 
     var showLoginDialog by remember { mutableStateOf(false) }
@@ -194,7 +199,8 @@ fun CalendarScreen(context: Context) {
 
     val today = LocalDate.now()
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
-    val daysOfMonth: List<LocalDate> = (1..currentMonth.lengthOfMonth()).map { currentMonth.atDay(it) }
+    val daysOfMonth: List<LocalDate> =
+        (1..currentMonth.lengthOfMonth()).map { currentMonth.atDay(it) }
 
     val firstDayOfMonth = currentMonth.atDay(1)
     val firstDayOfWeek = firstDayOfMonth.dayOfWeek.value // 1 = lunes, 7 = domingo (segun java.time)
@@ -208,17 +214,17 @@ fun CalendarScreen(context: Context) {
     }
 
     val monthFormatter = ofPattern("MMMM yyyy", Locale("es", "ES"))
-    val monthName = currentMonth.format(monthFormatter).replaceFirstChar { 
-        if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString() 
+    val monthName = currentMonth.format(monthFormatter).replaceFirstChar {
+        if (it.isLowerCase()) it.titlecase(Locale("es", "ES")) else it.toString()
     }
 
     val tasks = tasksList
 
     val tasksByDay: Map<LocalDate, List<Task>> =
-    daysOfMonth.associateWith { day ->
-        tasks.filter { it.dueDate.year == day.year && it.dueDate.month == day.month && it.dueDate.dayOfMonth == day.dayOfMonth }
-    }
-    
+        daysOfMonth.associateWith { day ->
+            tasks.filter { it.dueDate.year == day.year && it.dueDate.month == day.month && it.dueDate.dayOfMonth == day.dayOfMonth }
+        }
+
     var showTaskDialog by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showTaskCompletedDialog by remember { mutableStateOf(false) }
@@ -236,6 +242,9 @@ fun CalendarScreen(context: Context) {
     var lastPointsEarned by remember { mutableStateOf(0) }
 
     var showSettingsDialog by remember { mutableStateOf(false) }
+
+    var showRewards by remember { mutableStateOf(false) }
+    var showLoginForStore by remember { mutableStateOf(false) }
 
     // Mostrar tutorial si no se ha visto antes
     LaunchedEffect(Unit) {
@@ -279,10 +288,39 @@ fun CalendarScreen(context: Context) {
                     }
                 },
                 actions = {
+
+                    BadgedBox(
+                        badge = {
+                            if ((currentAccount?.points ?: 0) > 0) {
+                                Badge { Text((currentAccount?.points ?: 0).toString()) }
+                            }
+                        }
+                    ) {
+                        IconButton(
+                            onClick = {
+                                if (currentAccount == null) {
+                                    showLoginForStore = true
+                                } else {
+                                    showRewards = true
+                                }
+                            },
+                            modifier = Modifier.size(36.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = "Recompensas"
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+
                     // Si el usuario esta logueado, mostrar boton de perfil
                     if (loggedIn) {
                         var expanded by remember { mutableStateOf(false) }
-                        Text("Hola, ${currentAccount?.name ?: "Usuario"}", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Text(
+                            "Hola, ${currentAccount?.name ?: "Usuario"}",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                         Box(
                             modifier = Modifier
                                 .wrapContentSize(Alignment.TopEnd)
@@ -299,14 +337,14 @@ fun CalendarScreen(context: Context) {
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("Recompensas, ${currentAccount?.points ?: 0}") },
-                                    onClick = { 
-                                        /* TODO: recompensas */
-                                        expanded = false 
+                                    onClick = {
+                                        showRewards = true
+                                        expanded = false
                                     }
                                 )
                                 DropdownMenuItem(
                                     text = { Text("Cerrar sesión") },
-                                    onClick = { 
+                                    onClick = {
                                         loggedIn = false
                                         isPremium = false
                                         currentAccount = null
@@ -319,7 +357,10 @@ fun CalendarScreen(context: Context) {
                     // Si el usuario no esta logueado, mostrar botones de login y registro
                     else {
                         TextButton(onClick = { showLoginDialog = true }) {
-                            Text("Iniciar sesión", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(
+                                "Iniciar sesión",
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         TextButton(onClick = { showAddAccountDialog = true }) {
                             Text("Registrarse", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -411,7 +452,12 @@ fun CalendarScreen(context: Context) {
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 listOf("Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom").forEach { dayName ->
-                    Text(dayName, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = MaterialTheme.colorScheme.onBackground)
+                    Text(
+                        dayName,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
                 }
             }
             Spacer(modifier = Modifier.height(15.dp))
@@ -474,7 +520,9 @@ fun CalendarScreen(context: Context) {
                                                 )
                                                 Text(
                                                     task.dueTime.format(timeFormatter),
-                                                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 10.sp),
+                                                    style = MaterialTheme.typography.bodySmall.copy(
+                                                        fontSize = 10.sp
+                                                    ),
                                                     color = MaterialTheme.colorScheme.onSecondary,
                                                     maxLines = 1,
                                                     overflow = TextOverflow.Ellipsis
@@ -494,13 +542,30 @@ fun CalendarScreen(context: Context) {
             if (showTaskDialog && selectedTask != null) {
                 AlertDialog(
                     onDismissRequest = { showTaskDialog = false },
-                    title = { Text(text = selectedTask!!.title, color = MaterialTheme.colorScheme.onSecondary) },
+                    title = {
+                        Text(
+                            text = selectedTask!!.title,
+                            color = MaterialTheme.colorScheme.onSecondary
+                        )
+                    },
                     text = {
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                            Text("Descripción: ${selectedTask!!.description}", color = MaterialTheme.colorScheme.onSecondary)
-                            Text("Fecha: ${selectedTask!!.dueDate.format(dateFormatter)}", color = MaterialTheme.colorScheme.onSecondary)
-                            Text("Hora: ${selectedTask!!.dueTime.format(timeFormatter)}", color = MaterialTheme.colorScheme.onSecondary)
-                            Text("Dificultad: ${selectedTask!!.difficulty}/5", color = MaterialTheme.colorScheme.onSecondary)
+                            Text(
+                                "Descripción: ${selectedTask!!.description}",
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Text(
+                                "Fecha: ${selectedTask!!.dueDate.format(dateFormatter)}",
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Text(
+                                "Hora: ${selectedTask!!.dueTime.format(timeFormatter)}",
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
+                            Text(
+                                "Dificultad: ${selectedTask!!.difficulty}/5",
+                                color = MaterialTheme.colorScheme.onSecondary
+                            )
                             if (selectedTask!!.steps.isNotEmpty()) {
                                 Text("Pasos:", color = MaterialTheme.colorScheme.onSecondary)
                                 selectedTask!!.steps.forEachIndexed { index, step ->
@@ -518,14 +583,19 @@ fun CalendarScreen(context: Context) {
                                         IconButton(
                                             onClick = {
                                                 // Quitar paso de la tarea
-                                                TaskStorage.removeStepFromTask(context, selectedTask!!.id, index)
+                                                TaskStorage.removeStepFromTask(
+                                                    context,
+                                                    selectedTask!!.id,
+                                                    index
+                                                )
                                                 // Obtenemos las tareas actualizadas
                                                 val updatedTasks = TaskStorage.loadTasks(context)
                                                 // Refrescamos la lista de tareas
                                                 tasksList.clear()
                                                 tasksList.addAll(updatedTasks)
                                                 // Actualizar la tarea seleccionada
-                                                selectedTask = updatedTasks.find { it.id == selectedTask!!.id }
+                                                selectedTask =
+                                                    updatedTasks.find { it.id == selectedTask!!.id }
                                             }
                                         ) {
                                             Icon(
@@ -540,42 +610,54 @@ fun CalendarScreen(context: Context) {
                         }
                     },
                     confirmButton = {
-                        Button(onClick = {
-                            showTaskDialog = false
-                            lastPointsEarned = 0
-                            // Obtener puntos si el usuario esta logueado
-                            if (loggedIn) {
-                                // Calcular los puntos a otorgar
-                                val pointsEarned = CalculatePointsForTask(selectedTask!!)
-                                lastPointsEarned = pointsEarned
-                                // Actualizar puntos de la cuenta
-                                currentAccount?.let { account ->
-                                    AccountStorage.addPointsToAccount(context, account.id, pointsEarned)
-                                    // Refrescar la cuenta actual
-                                    val updatedAccount = AccountStorage.validateLogin(context, account.email, account.password)
-                                    currentAccount = updatedAccount
+                        Button(
+                            onClick = {
+                                showTaskDialog = false
+                                lastPointsEarned = 0
+                                // Obtener puntos si el usuario esta logueado
+                                if (loggedIn) {
+                                    // Calcular los puntos a otorgar
+                                    val pointsEarned = CalculatePointsForTask(selectedTask!!)
+                                    lastPointsEarned = pointsEarned
+                                    // Actualizar puntos de la cuenta
+                                    currentAccount?.let { account ->
+                                        AccountStorage.addPointsToAccount(
+                                            context,
+                                            account.id,
+                                            pointsEarned
+                                        )
+                                        // Refrescar la cuenta actual
+                                        val updatedAccount = AccountStorage.validateLogin(
+                                            context,
+                                            account.email,
+                                            account.password
+                                        )
+                                        currentAccount = updatedAccount
+                                    }
                                 }
-                            }
-                            selectedTask?.let { task ->
-                                tasksList.remove(task)
-                                TaskStorage.removeTaskById(context, task.id)
-                            }
-                            selectedTask = null
-                            showTaskCompletedDialog = true
-                         },
-                         colors = ButtonDefaults.buttonColors(
-                            containerColor = GetTaskColorText(selectedTask!!.difficulty),
-                            contentColor = MaterialTheme.colorScheme.onSecondary
-                        )) {
+                                selectedTask?.let { task ->
+                                    tasksList.remove(task)
+                                    TaskStorage.removeTaskById(context, task.id)
+                                }
+                                selectedTask = null
+                                showTaskCompletedDialog = true
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = GetTaskColorText(selectedTask!!.difficulty),
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            )
+                        ) {
                             Text("Completar tarea")
                         }
                     },
                     dismissButton = {
-                        Button(onClick = { showTaskDialog = false },
+                        Button(
+                            onClick = { showTaskDialog = false },
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = GetTaskColorText(selectedTask!!.difficulty),
                                 contentColor = MaterialTheme.colorScheme.onSecondary
-                            )) {
+                            )
+                        ) {
                             Text("Cerrar")
                         }
                     },
@@ -592,7 +674,8 @@ fun CalendarScreen(context: Context) {
 
             if (showAddTaskDialog) {
                 AddTaskDialog(
-                    onDismiss = { showAddTaskDialog = false
+                    onDismiss = {
+                        showAddTaskDialog = false
                     },
                     onAddTask = { newTask ->
                         val result = TaskStorage.addTask(context, newTask, isPremium)
@@ -635,8 +718,8 @@ fun CalendarScreen(context: Context) {
 
             if (showAddAccountDialog) {
                 AddAccountDialog(
-                    onDismiss = { 
-                        showAddAccountDialog = false 
+                    onDismiss = {
+                        showAddAccountDialog = false
                     },
                     onSuccess = {
                         showAddAccountDialog = false
@@ -652,7 +735,7 @@ fun CalendarScreen(context: Context) {
                 )
             }
 
-            if (showLoginDialog){
+            if (showLoginDialog) {
                 LoginDialog(
                     onDismiss = { showLoginDialog = false },
                     onSuccess = { account ->
@@ -676,8 +759,230 @@ fun CalendarScreen(context: Context) {
             }
         }
     }
+    if (showRewards) {
+        RewardsScreen(
+            context = context,
+            currentAccount = currentAccount,
+            onBack = { showRewards = false },
+            onAccountRefresh = { updatedAccount ->
+                currentAccount = updatedAccount
+                loggedIn = updatedAccount != null
+                isPremium = updatedAccount?.isPremium ?: false
+            }
+        )
+    }
+    if (showLoginForStore) {
+        AlertDialog(
+            onDismissRequest = { showLoginForStore = false },
+            title = { Text("Inicia sesión para acceder a la tienda", color = MaterialTheme.colorScheme.onSurface) },
+            text = { Text("Debes iniciar sesión para ver y canjear recompensas.", color = MaterialTheme.colorScheme.onSurface) },
+            confirmButton = {
+                Button(onClick = {
+                    showLoginForStore = false
+                    showLoginDialog = true
+                }) {
+                    Text("Iniciar sesión")
+                }
+            },
+            dismissButton = {
+                Button(onClick = { showLoginForStore = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun RewardsScreen(
+    context: Context,
+    currentAccount: Account? = null,
+    onBack: (() -> Unit)? = null,
+    onAccountRefresh: ((Account) -> Unit)? = null
+) {
+    data class Reward(val id: Int, val title: String, val cost: Int)
+
+    val rewards = listOf(
+        Reward(1, "Recompensa 1", 100),
+        Reward(2, "Recompensa 2", 100),
+        Reward(3, "Recompensa 3", 100),
+        Reward(4, "Recompensa 4", 100)
+    )
+
+    val purchasedIds = remember { mutableStateSetOf<Int>() }
+    LaunchedEffect(currentAccount?.id) {
+        purchasedIds.clear()
+        currentAccount?.purchasedRewards?.forEach { purchasedIds.add(it) }
+    }
+
+    var processingId by remember { mutableStateOf<Int?>(null) }
+    var showBuyConfirmation by remember { mutableStateOf<Reward?>(null) }
+    var showNotEnoughPoints by remember { mutableStateOf<Reward?>(null) }
+    val points = currentAccount?.points ?: 0
+
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {  }
+            .padding(16.dp),
+        contentAlignment = Alignment.Center
+    ) {
+
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .clip(RoundedCornerShape(16.dp)),
+            color = MaterialTheme.colorScheme.surface,
+            tonalElevation = 4.dp
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Recompensas",
+                        style = MaterialTheme.typography.headlineMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = "Puntos: $points",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 240.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(8.dp)
+                ) {
+                    items(rewards) { r ->
+                        val isBought = purchasedIds.contains(r.id) || (currentAccount?.purchasedRewards?.contains(r.id) ?: false)
+
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(12.dp)),
+                            color = MaterialTheme.colorScheme.surfaceVariant,
+                            tonalElevation = 2.dp
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(12.dp)
+                            ) {
+                                Text(r.title, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                                Spacer(Modifier.height(6.dp))
+                                Text("${r.cost} pts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                                Spacer(Modifier.height(8.dp))
+
+                                if (isBought) {
+                                    Text(
+                                        "Comprado",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier
+                                            .height(36.dp)
+                                            .width(120.dp)
+                                            .wrapContentHeight(align = Alignment.CenterVertically)
+                                    )
+                                } else {
+                                    Button(
+                                        onClick = {
+                                            val acc = currentAccount
+                                            if (acc != null && acc.points >= r.cost) showBuyConfirmation = r
+                                            else showNotEnoughPoints = r
+                                        },
+                                        modifier = Modifier
+                                            .height(36.dp)
+                                            .width(120.dp),
+                                        enabled = processingId == null
+                                    ) {
+                                        Text("Comprar", style = MaterialTheme.typography.bodySmall)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                    Button(onClick = { onBack?.invoke() }) {
+                        Text("Regresar")
+                    }
+                }
+
+                if (showBuyConfirmation != null && currentAccount != null) {
+                    val reward = showBuyConfirmation!!
+                    AlertDialog(
+                        onDismissRequest = { showBuyConfirmation = null },
+                        title = { Text("Confirmar canje", color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text("¿Deseas canjear '${reward.title}' por ${reward.cost} puntos?", color = MaterialTheme.colorScheme.onSurface) },
+                        confirmButton = {
+                            Button(onClick = {
+                                val acc = currentAccount ?: return@Button
+                                processingId = reward.id
+                                val updated = AccountStorage.purchaseReward(context, acc.id, reward.id, reward.cost)
+                                if (updated == null) {
+                                    Toast.makeText(context, "No se pudo completar la compra", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    onAccountRefresh?.invoke(updated)
+                                    purchasedIds.add(reward.id)
+                                    Toast.makeText(context, "Recompensa canjeada", Toast.LENGTH_SHORT).show()
+                                }
+                                processingId = null
+                                showBuyConfirmation = null
+                            }) { Text("Confirmar") }
+                        },
+                        dismissButton = {
+                            Button(onClick = {
+                                processingId = null
+                                showBuyConfirmation = null
+                            }) { Text("Cancelar") }
+                        },
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                }
+
+                if (showNotEnoughPoints != null) {
+                    val r = showNotEnoughPoints!!
+                    AlertDialog(
+                        onDismissRequest = { showNotEnoughPoints = null },
+                        title = { Text("Puntos insuficientes", color = MaterialTheme.colorScheme.onSurface) },
+                        text = { Text("No tienes suficientes puntos para canjear '${r.title}'.", color = MaterialTheme.colorScheme.onSurface) },
+                        confirmButton = {
+                            Button(onClick = { showNotEnoughPoints = null }) { Text("Aceptar") }
+                        },
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                }
+            }
+        }
+    }
+}
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
