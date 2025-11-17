@@ -95,6 +95,7 @@ import com.focusup.focusupapp.ui.theme.LocalThemeId
 import androidx.compose.foundation.interaction.MutableInteractionSource
 
 import com.focusup.focusupapp.storage.TutorialPreferences
+import com.focusup.focusupapp.storage.SessionStorage
 
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
@@ -248,6 +249,14 @@ fun CalendarScreen(context: Context) {
 
     // Mostrar tutorial si no se ha visto antes
     LaunchedEffect(Unit) {
+        // cargando sesión al iniciar
+        val savedSession = SessionStorage.loadSession(context)
+        if (savedSession != null) {
+            currentAccount = savedSession
+            loggedIn = true
+            isPremium = savedSession.isPremium
+        }
+
         val seen = TutorialPreferences.hasSeenTutorial(context)
         if (!seen) {
             showUserManualDialog = true
@@ -345,6 +354,7 @@ fun CalendarScreen(context: Context) {
                                 DropdownMenuItem(
                                     text = { Text("Cerrar sesión") },
                                     onClick = {
+                                        SessionStorage.clearSession(context) // limpiando sesión al hacer logOut
                                         loggedIn = false
                                         isPremium = false
                                         currentAccount = null
@@ -1472,6 +1482,7 @@ fun LoginDialog(
                             // Intentar login
                             val account = AccountStorage.validateLogin(context, accountEmail, accountPassword)
                             if (account != null) {
+                                SessionStorage.saveSession(context, account) 
                                 onSuccess(account)
                             } else {
                                 loginError = true
