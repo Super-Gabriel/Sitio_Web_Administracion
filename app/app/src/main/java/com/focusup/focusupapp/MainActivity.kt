@@ -77,8 +77,7 @@ import androidx.compose.material.icons.filled.Help
 import java.util.*
 import java.time.Duration
 
-// Import para TaskStorage
-import com.focusup.focusupapp.storage.TaskStorage
+
 import java.time.format.DateTimeFormatter.ofPattern
 
 import com.focusup.focusupapp.model.Account
@@ -186,9 +185,7 @@ class MainActivity : ComponentActivity() {
 fun CalendarScreen(context: Context) {
     // Cargar tareas desde el almacenamiento
     val tasksList = remember {
-        mutableStateListOf<Task>().apply {
-            addAll(TaskStorage.loadTasks(context))
-        }
+        mutableStateListOf<Task>()
     }
 
     var showLoginDialog by remember { mutableStateOf(false) }
@@ -247,14 +244,22 @@ fun CalendarScreen(context: Context) {
     var showRewards by remember { mutableStateOf(false) }
     var showLoginForStore by remember { mutableStateOf(false) }
 
+    var showLoginRequiredForTask by remember { mutableStateOf(false) }
+
     // Mostrar tutorial si no se ha visto antes
     LaunchedEffect(Unit) {
         // cargando sesión al iniciar
         val savedSession = SessionStorage.loadSession(context)
         if (savedSession != null) {
-            currentAccount = savedSession
+            // Obtener la cuenta actualizada con las tareas más recientes
+            val updatedAccount = SessionStorage.getUpdatedSession(context) ?: savedSession
+            currentAccount = updatedAccount
             loggedIn = true
-            isPremium = savedSession.isPremium
+            isPremium = updatedAccount.isPremium
+            
+            // Cargar tareas de la cuenta
+            tasksList.clear()
+            tasksList.addAll(AccountStorage.getTasksForAccount(context, updatedAccount.id))
         }
 
         val seen = TutorialPreferences.hasSeenTutorial(context)
@@ -358,6 +363,7 @@ fun CalendarScreen(context: Context) {
                                         loggedIn = false
                                         isPremium = false
                                         currentAccount = null
+                                        tasksList.clear()
                                         expanded = false
                                     }
                                 )
@@ -592,20 +598,28 @@ fun CalendarScreen(context: Context) {
                                         )
                                         IconButton(
                                             onClick = {
-                                                // Quitar paso de la tarea
-                                                TaskStorage.removeStepFromTask(
-                                                    context,
-                                                    selectedTask!!.id,
-                                                    index
-                                                )
-                                                // Obtenemos las tareas actualizadas
-                                                val updatedTasks = TaskStorage.loadTasks(context)
-                                                // Refrescamos la lista de tareas
-                                                tasksList.clear()
-                                                tasksList.addAll(updatedTasks)
-                                                // Actualizar la tarea seleccionada
-                                                selectedTask =
-                                                    updatedTasks.find { it.id == selectedTask!!.id }
+                                                // Quitar paso de la tarea en la cuenta
+                                                if (currentAccount != null) {
+                                                    AccountStorage.removeStepFromTaskInAccount(
+                                                        context,
+                                                        currentAccount!!.id,
+                                                        selectedTask!!.id,
+                                                        index
+                                                    )
+                                                    // Actualizar la sesión
+                                                    val updatedAccount = SessionStorage.getUpdatedSession(context)
+                                                    if (updatedAccount != null) {
+                                                        currentAccount = updatedAccount
+                                                        SessionStorage.refreshSession(context, updatedAccount)
+                                                    }
+                                                    // Obtenemos las tareas actualizadas
+                                                    val updatedTasks = AccountStorage.getTasksForAccount(context, currentAccount!!.id)
+                                                    // Refrescamos la lista de tareas
+                                                    tasksList.clear()
+                                                    tasksList.addAll(updatedTasks)
+                                                    // Actualizar la tarea seleccionada
+                                                    selectedTask = updatedTasks.find { it.id == selectedTask!!.id }
+                                                }
                                             }
                                         ) {
                                             Icon(
@@ -625,29 +639,34 @@ fun CalendarScreen(context: Context) {
                                 showTaskDialog = false
                                 lastPointsEarned = 0
                                 // Obtener puntos si el usuario esta logueado
-                                if (loggedIn) {
+                                if (loggedIn && currentAccount != null) {
                                     // Calcular los puntos a otorgar
                                     val pointsEarned = CalculatePointsForTask(selectedTask!!)
                                     lastPointsEarned = pointsEarned
                                     // Actualizar puntos de la cuenta
-                                    currentAccount?.let { account ->
-                                        AccountStorage.addPointsToAccount(
-                                            context,
-                                            account.id,
-                                            pointsEarned
-                                        )
-                                        // Refrescar la cuenta actual
-                                        val updatedAccount = AccountStorage.validateLogin(
-                                            context,
-                                            account.email,
-                                            account.password
-                                        )
+                                    val updatedAccount = AccountStorage.addPointsToAccount(
+                                        context,
+                                        currentAccount!!.id,
+                                        pointsEarned
+                                    )
+                                    // Actualizar la cuenta actual y la sesión
+                                    if (updatedAccount != null) {
                                         currentAccount = updatedAccount
+                                        SessionStorage.refreshSession(context, updatedAccount)
                                     }
                                 }
+                                // Eliminar la tarea de la cuenta
                                 selectedTask?.let { task ->
                                     tasksList.remove(task)
-                                    TaskStorage.removeTaskById(context, task.id)
+                                    if (currentAccount != null) {
+                                        AccountStorage.removeTaskFromAccount(context, currentAccount!!.id, task.id)
+                                        // Actualizar la sesión
+                                        val updatedAccount = SessionStorage.getUpdatedSession(context)
+                                        if (updatedAccount != null) {
+                                            currentAccount = updatedAccount
+                                            SessionStorage.refreshSession(context, updatedAccount)
+                                        }
+                                    }
                                 }
                                 selectedTask = null
                                 showTaskCompletedDialog = true
@@ -688,9 +707,27 @@ fun CalendarScreen(context: Context) {
                         showAddTaskDialog = false
                     },
                     onAddTask = { newTask ->
-                        val result = TaskStorage.addTask(context, newTask, isPremium)
+                        if (currentAccount == null) {
+                            // Mostrar diálogo específico para cuando no hay sesión
+                            showLoginRequiredForTask = true
+                            showAddTaskDialog = false
+                            return@AddTaskDialog
+                        }
+                        
+                        val result = AccountStorage.addTaskToAccount(context, currentAccount!!.id, newTask, isPremium)
+                        
                         if (result) {
                             showTaskCreatedDialog = true
+                            // Actualizar la sesión y las tareas
+                            val updatedAccount = SessionStorage.getUpdatedSession(context)
+                            if (updatedAccount != null) {
+                                currentAccount = updatedAccount
+                                SessionStorage.refreshSession(context, updatedAccount)
+                            }
+                            // Refrescar la lista de tareas
+                            val updatedTasks = AccountStorage.getTasksForAccount(context, currentAccount!!.id)
+                            tasksList.clear()
+                            tasksList.addAll(updatedTasks)
                         } else {
                             if (isPremium) {
                                 showTaskNotCreatedDialogPremium = true
@@ -698,13 +735,9 @@ fun CalendarScreen(context: Context) {
                                 showTaskNotCreatedDialogNonPremium = true
                             }
                         }
-                        // Refrescamos la lista de tareas
-                        val updatedTasks = TaskStorage.loadTasks(context)
-                        tasksList.clear()
-                        tasksList.addAll(updatedTasks)
                         showAddTaskDialog = false
                     },
-                    nextId = TaskStorage.getNextId(context)
+                    nextId = if (currentAccount != null) AccountStorage.getNextTaskIdForAccount(context, currentAccount!!.id) else 1
                 )
             }
 
@@ -754,6 +787,10 @@ fun CalendarScreen(context: Context) {
                         loggedIn = true
                         isPremium = account.isPremium
                         showLoginDialog = false
+
+                         // Cargar las tareas de la cuenta
+                        tasksList.clear()
+                        tasksList.addAll(AccountStorage.getTasksForAccount(context, account.id))
                     }
                 )
             }
@@ -766,6 +803,45 @@ fun CalendarScreen(context: Context) {
 
             if (showSettingsDialog) {
                 SettingsDialog(onDismiss = { showSettingsDialog = false })
+            }
+
+            if (showLoginRequiredForTask) {
+                AlertDialog(
+                    onDismissRequest = { showLoginRequiredForTask = false },
+                    title = { Text("Sesión requerida", color = MaterialTheme.colorScheme.onBackground) },
+                    text = { 
+                        Text(
+                            "Debes iniciar sesión para poder crear tareas.", 
+                            color = MaterialTheme.colorScheme.onBackground
+                        ) 
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { 
+                                showLoginRequiredForTask = false 
+                                showLoginDialog = true
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text("Iniciar sesión")
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { showLoginRequiredForTask = false },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            )
+                        ) {
+                            Text("Cancelar")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             }
         }
     }

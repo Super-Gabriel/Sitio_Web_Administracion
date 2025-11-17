@@ -11,14 +11,22 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import java.time.LocalDate
 import com.focusup.focusupapp.model.Task
-import com.focusup.focusupapp.storage.TaskStorage  // Importar TaskStorage
+import com.focusup.focusupapp.storage.AccountStorage
+import com.focusup.focusupapp.storage.SessionStorage
 import android.graphics.*
 
 class ReminderReceiver : BroadcastReceiver() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onReceive(context: Context, intent: Intent?) {
-        // Cargar tareas desde el almacenamiento en lugar de TasksProvider
-        val tasks = TaskStorage.loadTasks(context)  // Usar TaskStorage
+        // Cargar la sesión activa para obtener la cuenta actual
+        val currentAccount = SessionStorage.loadSession(context)
+        
+        val tasks: List<Task> = if (currentAccount != null) {
+            // Cargar tareas de la cuenta activa
+            AccountStorage.getTasksForAccount(context, currentAccount.id)
+        } else {
+            emptyList()
+        }
 
         // Buscar la tarea mas proxima
         val now = LocalDate.now()
