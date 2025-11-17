@@ -8,5 +8,6 @@ data class Account(
     val isPremium: Boolean,
     var points: Int = 0,
     var purchasedRewards: MutableList<Int> = mutableListOf(),
-    val createdAt: String
+    val createdAt: String,
+    var tasks: MutableList<Task> = mutableListOf() // lista de tareas propias de la cuenta
 )
