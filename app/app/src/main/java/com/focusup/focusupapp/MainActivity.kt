@@ -331,10 +331,6 @@ fun CalendarScreen(context: Context) {
                     // Si el usuario esta logueado, mostrar boton de perfil
                     if (loggedIn) {
                         var expanded by remember { mutableStateOf(false) }
-                        Text(
-                            "Hola, ${currentAccount?.name ?: "Usuario"}",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                         Box(
                             modifier = Modifier
                                 .wrapContentSize(Alignment.TopEnd)
@@ -349,6 +345,13 @@ fun CalendarScreen(context: Context) {
                                 expanded = expanded,
                                 onDismissRequest = { expanded = false }
                             ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                                ) {
+                                    Text("Hola, ${currentAccount?.name ?: "Usuario"}")
+                                }
                                 DropdownMenuItem(
                                     text = { Text("Recompensas, ${currentAccount?.points ?: 0}") },
                                     onClick = {
