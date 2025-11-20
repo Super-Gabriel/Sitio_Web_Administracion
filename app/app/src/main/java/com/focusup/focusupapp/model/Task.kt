@@ -19,4 +19,6 @@ data class Task(
     var steps: MutableList<Step>,
     // ID
     val id: Int,
+    var isCompleted: Boolean = false
+
 )

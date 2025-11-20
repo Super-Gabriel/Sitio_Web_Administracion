@@ -717,19 +717,27 @@ fun CalendarScreen(context: Context) {
                                     }
                                 }
             
-                                // Eliminar la tarea
-                                selectedTask?.let { task ->
-                                    tasksList.remove(task)
-                                    if (currentAccount != null) {
-                                        AccountStorage.removeTaskFromAccount(context, currentAccount!!.id, task.id)
-            
-                                        val updatedAccount = SessionStorage.getUpdatedSession(context)
-                                        if (updatedAccount != null) {
-                                            currentAccount = updatedAccount
-                                            SessionStorage.refreshSession(context, updatedAccount)
-                                        }
-                                    }
-                                }
+                              // Marcar tarea como completa en lugar de eliminarla
+                            selectedTask?.let { task ->
+                            task.isCompleted = true  // <<-- marca la tarea como completa
+
+                            // Mover al final de la lista
+                            // Marcar tarea como completa y moverla al final de la lista si hay otras incompletas
+
+                            tasksList.remove(task)
+                            tasksList.add(task)
+
+                                if (currentAccount != null) {
+                                AccountStorage.updateTaskOfAccount(context, currentAccount!!.id, task)
+
+                                val updatedAccount = SessionStorage.getUpdatedSession(context)
+                                if (updatedAccount != null) {
+                                currentAccount = updatedAccount
+                                SessionStorage.refreshSession(context, updatedAccount)
+        }
+    }
+}
+
             
                                 selectedTask = null
                                 showTaskCompletedDialog = true
