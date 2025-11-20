@@ -95,6 +95,21 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 
 import com.focusup.focusupapp.storage.TutorialPreferences
 import com.focusup.focusupapp.storage.SessionStorage
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.unit.Dp
+import com.focusup.focusupapp.ui.theme.rewardThemeColors
+
+import com.focusup.focusupapp.ui.theme.ThemeIds
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
@@ -302,6 +317,7 @@ fun CalendarScreen(context: Context) {
                     }
                 },
                 actions = {
+                    if (loggedIn) {
 
                     BadgedBox(
                         badge = {
@@ -325,6 +341,7 @@ fun CalendarScreen(context: Context) {
                                 contentDescription = "Recompensas"
                             )
                         }
+                    }
                     }
                     Spacer(modifier = Modifier.width(8.dp))
 
@@ -808,44 +825,6 @@ fun CalendarScreen(context: Context) {
                 SettingsDialog(onDismiss = { showSettingsDialog = false })
             }
 
-            if (showLoginRequiredForTask) {
-                AlertDialog(
-                    onDismissRequest = { showLoginRequiredForTask = false },
-                    title = { Text("Sesión requerida", color = MaterialTheme.colorScheme.onBackground) },
-                    text = { 
-                        Text(
-                            "Debes iniciar sesión para poder crear tareas.", 
-                            color = MaterialTheme.colorScheme.onBackground
-                        ) 
-                    },
-                    confirmButton = {
-                        Button(
-                            onClick = { 
-                                showLoginRequiredForTask = false 
-                                showLoginDialog = true
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary,
-                                contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-                        ) {
-                            Text("Iniciar sesión")
-                        }
-                    },
-                    dismissButton = {
-                        Button(
-                            onClick = { showLoginRequiredForTask = false },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.secondary,
-                                contentColor = MaterialTheme.colorScheme.onSecondary
-                            )
-                        ) {
-                            Text("Cancelar")
-                        }
-                    },
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            }
         }
     }
     if (showRewards) {
@@ -890,13 +869,17 @@ fun RewardsScreen(
     onBack: (() -> Unit)? = null,
     onAccountRefresh: ((Account) -> Unit)? = null
 ) {
-    data class Reward(val id: Int, val title: String, val cost: Int)
+    data class Reward(val id: Int, val title: String, val cost: Int,val themeId:Int)
 
     val rewards = listOf(
-        Reward(1, "Recompensa 1", 100),
-        Reward(2, "Recompensa 2", 100),
-        Reward(3, "Recompensa 3", 100),
-        Reward(4, "Recompensa 4", 100)
+        Reward(1, "Tema Rosa", 100,5),
+        Reward(2, "Tema Oceano", 100,6),
+        Reward(3, "Tema Verde", 100,7),
+        Reward(4, "Tema Amarillo 4", 100,8),
+        Reward(5, "Tema Morado", 100,9),
+        Reward(6, "Tema Naranja", 100,10),
+        Reward(7, "Tema Panda", 100,11),
+        Reward(8, "Tema Arcoiris", 100, 12)
     )
 
     val purchasedIds = remember { mutableStateSetOf<Int>() }
@@ -909,6 +892,7 @@ fun RewardsScreen(
     var showBuyConfirmation by remember { mutableStateOf<Reward?>(null) }
     var showNotEnoughPoints by remember { mutableStateOf<Reward?>(null) }
     val points = currentAccount?.points ?: 0
+    val themeState = LocalThemeId.current
 
 
     Box(
@@ -923,6 +907,8 @@ fun RewardsScreen(
         contentAlignment = Alignment.Center
     ) {
 
+        val surfaceHeight = 800.dp
+
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
@@ -935,7 +921,6 @@ fun RewardsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
                 Row(
@@ -957,12 +942,15 @@ fun RewardsScreen(
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
+                val gridState = rememberLazyGridState()
+
 
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
+                    state = gridState,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(min = 240.dp),
+                        .weight(1f),
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(8.dp)
@@ -981,6 +969,13 @@ fun RewardsScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.padding(12.dp)
                             ) {
+                                Spacer(modifier = Modifier.height(8.dp))
+
+                                ThemeDiagonalCirclePreview(
+                                    themeId = r.themeId,
+                                    modifier = Modifier.size(56.dp)
+                                )
+
                                 Text(r.title, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
                                 Spacer(Modifier.height(6.dp))
                                 Text("${r.cost} pts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
@@ -1072,6 +1067,56 @@ fun RewardsScreen(
         }
     }
 }
+
+@Composable
+fun ThemeDiagonalCirclePreview(
+    themeId: Int,
+    modifier: Modifier = Modifier,
+    diameterDp: Dp = 56.dp,
+    stripeAngleDegrees: Float = 45f,
+    fallbackColors: List<Color> = listOf(Color.LightGray, Color.Gray, Color.DarkGray)
+) {
+    val colors = (rewardThemeColors[themeId] ?: fallbackColors).distinct()
+
+    Canvas(modifier = modifier.size(diameterDp)) {
+        val w = size.width
+        val h = size.height
+        val center = Offset(w / 2f, h / 2f)
+
+        val circlePath = Path().apply {
+            addOval(Rect(0f, 0f, w, h))
+        }
+
+        val stripeCount = colors.size.coerceAtLeast(1)
+        val stripeWidth = (w * 1.4f) / stripeCount
+        val startX = -w * 0.1f - stripeWidth
+
+        clipPath(circlePath) {
+            rotate(degrees = stripeAngleDegrees, pivot = center) {
+                var x = startX
+                for (color in colors) {
+                    drawRect(
+                        color = color,
+                        topLeft = Offset(x, -h),
+                        size = Size(stripeWidth + 1f, h * 3f)
+                    )
+                    x += stripeWidth
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun commonOutlinedColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = MaterialTheme.colorScheme.onBackground,
+    unfocusedTextColor = MaterialTheme.colorScheme.onBackground,
+    cursorColor = MaterialTheme.colorScheme.onBackground,
+    focusedBorderColor = MaterialTheme.colorScheme.onBackground,
+    unfocusedBorderColor = MaterialTheme.colorScheme.onBackground,
+    disabledTextColor = MaterialTheme.colorScheme.onBackground
+)
+
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -1113,14 +1158,16 @@ fun AddTaskDialog(
                     value = taskName,
                     onValueChange = { taskName = it },
                     label = { Text("Nombre de la tarea", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = commonOutlinedColors()
                 )
 
                 OutlinedTextField(
                     value = taskDescription,
                     onValueChange = { taskDescription = it },
                     label = { Text("Descripcion", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = commonOutlinedColors()
                 )
 
                 Box(modifier = Modifier.fillMaxWidth()) {
@@ -1130,6 +1177,8 @@ fun AddTaskDialog(
                         label = { Text("Fecha de entrega" ,color = MaterialTheme.colorScheme.onBackground)},
                         modifier = Modifier.fillMaxWidth(),
                         readOnly = true,
+                        textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onBackground),
+                        colors = commonOutlinedColors()
                     )
 
                     Box(
@@ -1157,6 +1206,8 @@ fun AddTaskDialog(
                         label = { Text("Hora de entrega", color = MaterialTheme.colorScheme.onBackground) },
                         modifier = Modifier.fillMaxWidth(),
                         readOnly = true,
+                        textStyle = LocalTextStyle.current.copy(color = MaterialTheme.colorScheme.onBackground),
+                        colors = commonOutlinedColors()
                     )
 
                     Box(
@@ -1316,14 +1367,16 @@ fun AddAccountDialog(
                     value = accountName,
                     onValueChange = { accountName = it },
                     label = { Text("Nombre de la cuenta", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = commonOutlinedColors()
                 )
 
                 OutlinedTextField(
                     value = accountEmail,
                     onValueChange = { accountEmail = it },
                     label = { Text("Email", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = commonOutlinedColors()
                 )
                 if (emailErrorEmpty) {
                     Text(
@@ -1351,7 +1404,8 @@ fun AddAccountDialog(
                     value = accountPassword,
                     onValueChange = { accountPassword = it },
                     label = { Text("Contraseña", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = commonOutlinedColors()
                 )
                 if (passwordErrorEmpty) {
                     Text(
@@ -1365,7 +1419,8 @@ fun AddAccountDialog(
                     value = accountConfirmPassword,
                     onValueChange = { accountConfirmPassword = it },
                     label = { Text("Confirmar contraseña", color = MaterialTheme.colorScheme.onBackground) },
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = commonOutlinedColors()
                 )
                 if (confirmPasswordErrorMismatch) {
                     Text(
@@ -1855,10 +1910,19 @@ fun SettingsDialog(
                 }
                 var expanded by remember { mutableStateOf(false) }
                 val themes = listOf(
-                    "Claro 1" to 1,
-                    "Oscuro 1" to 2,
-                    "Claro 2" to 3,
-                    "Oscuro 2" to 4
+                    "Claro 1" to ThemeIds.LIGHT1,
+                    "Oscuro 1" to ThemeIds.DARK1,
+                    "Claro 2" to ThemeIds.LIGHT2,
+                    "Oscuro 2" to ThemeIds.DARK2,
+                    "Rosa" to ThemeIds.PINK,
+                    "Océano" to ThemeIds.OCEAN,
+                    "Verde" to ThemeIds.GREEN,
+                    "Amarillo" to ThemeIds.YELLOW,
+                    "Morado" to ThemeIds.PURPLE,
+                    "Naranja" to ThemeIds.ORANGE,
+                    "Panda" to ThemeIds.PANDA,
+                    "Arcoíris" to ThemeIds.RAINBOW
+
                 )
                 val selectedThemeLabel = themes.firstOrNull { it.second == themeState.value }?.first ?: "Seleccionar tema"
                 Column(
