@@ -34,7 +34,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val nextTask = upcomingTasks.minWithOrNull(compareBy<Task> { it.dueDate })
 
         // Buscar la tarea mas dificil
-        val hardestTask = tasks.maxWithOrNull(compareBy<Task> { it.difficulty })
+        val hardestTask = upcomingTasks.maxWithOrNull(compareBy<Task> { it.difficulty })
 
         // Texto de la notificacion
         val notificationText = if (nextTask != null && hardestTask != null) {

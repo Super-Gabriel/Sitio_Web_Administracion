@@ -3,6 +3,7 @@ package com.focusup.focusupapp.storage
 import androidx.test.core.app.ApplicationProvider
 import com.focusup.focusupapp.model.Account
 import com.focusup.focusupapp.model.Task
+import com.focusup.focusupapp.model.Step
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -50,7 +51,7 @@ class AccountStorageTest {
         dueDate = java.time.LocalDate.of(2024, 6, 20),
         dueTime = java.time.LocalTime.of(15, 0),
         difficulty = 3,
-        steps = mutableListOf("Hacer resumen", "Resolver ejercicios"),
+        steps = mutableListOf(Step("Estudiar capitulo 1", false), Step("Hacer ejercicios", true)),
         id = 1
     )
 
@@ -138,6 +139,31 @@ class AccountStorageTest {
     // purchaseReward
 
     // addTaskToAccount
+    @Test
+    fun testAddTaskToAccount() {
+        AccountStorage.saveAccounts(context, listOf(account1))
+        println("Probando agregar tarea a la cuenta...")
+        AccountStorage.addTaskToAccount(context, account1.id, task1, account1.isPremium)
+        val loadedAccounts = AccountStorage.loadAccounts(context)
+        val loadedAccount = loadedAccounts.find { it.id == account1.id }
+        assertEquals(1, loadedAccount!!.tasks.size)
+        println("Paso la verificacion de cantidad de tareas")
+        val loadedTask = loadedAccount.tasks[0]
+        assertEquals("Examen 1", loadedTask.title)
+        println("Paso la verificacion de titulo de tarea")
+        assertEquals("Repasar para el examen", loadedTask.description)
+        println("Paso la verificacion de descripcion de tarea")
+        assertEquals(java.time.LocalDate.of(2024, 6, 20), loadedTask.dueDate)
+        println("Paso la verificacion de fecha de vencimiento de tarea")
+        assertEquals(java.time.LocalTime.of(15, 0), loadedTask.dueTime)
+        println("Paso la verificacion de hora de vencimiento de tarea")
+        assertEquals(3, loadedTask.difficulty)
+        println("Paso la verificacion de dificultad de tarea")
+        assertEquals(2, loadedTask.steps.size)
+        println("Paso la verificacion de cantidad de pasos de tarea")
+        println("Tarea agregada a la cuenta correctamente")
+        println()
+    }
 
     // removeTaskFromAccount
 
@@ -150,4 +176,8 @@ class AccountStorageTest {
     // updateAccount
 
     // getAccountById
+
+    // updateStepInTask
+
+    // uncompleteTaskOfAccount
 }
