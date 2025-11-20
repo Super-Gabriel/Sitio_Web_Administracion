@@ -62,6 +62,8 @@ import com.focusup.focusupapp.ui.theme.SpecialGreen
 import com.focusup.focusupapp.ui.theme.SpecialGreen2
 import com.focusup.focusupapp.ui.theme.SpecialBlue
 import com.focusup.focusupapp.ui.theme.SpecialBlue2
+import com.focusup.focusupapp.ui.theme.SpecialGray
+import com.focusup.focusupapp.ui.theme.SpecialGray2
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -110,6 +112,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.text.style.TextDecoration
+import com.focusup.focusupapp.model.Step
 
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
@@ -536,7 +541,7 @@ fun CalendarScreen(context: Context) {
                                         Surface(
                                             tonalElevation = 0.dp,
                                             shape = RoundedCornerShape(6.dp),
-                                            color = GetTaskColor(task.difficulty),
+                                            color = GetTaskColor(task.difficulty, task.isCompleted),
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(vertical = 2.dp)
@@ -580,7 +585,7 @@ fun CalendarScreen(context: Context) {
                     onDismissRequest = { showTaskDialog = false },
                     title = {
                         Text(
-                            text = selectedTask!!.title,
+                            text = selectedTask!!.title + getStatus(selectedTask!!.isCompleted),
                             color = MaterialTheme.colorScheme.onSecondary
                         )
                     },
@@ -648,7 +653,7 @@ fun CalendarScreen(context: Context) {
                                             }
                                         )
             
-                                        // Texto (con tachado si está completado)
+                                        // Texto (con tachado si esta completado)
                                         Text(
                                             text = "- ${step.text}",
                                             style = MaterialTheme.typography.bodySmall.copy(
@@ -698,6 +703,33 @@ fun CalendarScreen(context: Context) {
                     confirmButton = {
                         Button(
                             onClick = {
+                                // Si la tarea ya estaba completada, descompletarla
+                                if (selectedTask!!.isCompleted) {
+                                    val result = AccountStorage.uncompleteTaskOfAccount(context, currentAccount!!.id, selectedTask!!.id)
+                                    if (!result) {
+                                        selectedTask = null
+                                        showTaskDialog = false
+                                        if (isPremium) {
+                                            showTaskNotCreatedDialogPremium = true
+                                        } else {
+                                            showTaskNotCreatedDialogNonPremium = true
+                                        }
+                                        return@Button
+                                    }
+                                    val updatedAccount = SessionStorage.getUpdatedSession(context)
+                                    if (updatedAccount != null) {
+                                        currentAccount = updatedAccount
+                                        SessionStorage.refreshSession(context, updatedAccount)
+                                    }
+                                    // Actualizar la lista de tareas en la UI
+                                    val updatedTasks = AccountStorage.getTasksForAccount(context, currentAccount!!.id)
+                                    tasksList.clear()
+                                    tasksList.addAll(updatedTasks)
+
+                                    selectedTask = null
+                                    showTaskDialog = false
+                                    return@Button
+                                }
                                 showTaskDialog = false
                                 lastPointsEarned = 0
             
@@ -716,52 +748,48 @@ fun CalendarScreen(context: Context) {
                                         SessionStorage.refreshSession(context, updatedAccount)
                                     }
                                 }
-            
-                              // Marcar tarea como completa en lugar de eliminarla
-                            selectedTask?.let { task ->
-                            task.isCompleted = true  // <<-- marca la tarea como completa
+                                // Marcar tarea como completa en lugar de eliminarla
+                                selectedTask?.let { task ->
+                                    task.isCompleted = true
+                                    // Mover al final de la lista
+                                    // Marcar tarea como completa y moverla al final de la lista si hay otras incompletas
+                                    if (currentAccount != null) {
+                                        AccountStorage.updateTaskOfAccount(context, currentAccount!!.id, task)
 
-                            // Mover al final de la lista
-                            // Marcar tarea como completa y moverla al final de la lista si hay otras incompletas
-
-                            tasksList.remove(task)
-                            tasksList.add(task)
-
-                                if (currentAccount != null) {
-                                AccountStorage.updateTaskOfAccount(context, currentAccount!!.id, task)
-
-                                val updatedAccount = SessionStorage.getUpdatedSession(context)
-                                if (updatedAccount != null) {
-                                currentAccount = updatedAccount
-                                SessionStorage.refreshSession(context, updatedAccount)
-        }
-    }
-}
-
-            
+                                        val updatedAccount = SessionStorage.getUpdatedSession(context)
+                                        if (updatedAccount != null) {
+                                            currentAccount = updatedAccount
+                                            SessionStorage.refreshSession(context, updatedAccount)
+                                        }
+                                    }
+                                    // Actualizar la lista de tareas en la UI
+                                    val updatedTasks = AccountStorage.getTasksForAccount(context, currentAccount!!.id)
+                                    tasksList.clear()
+                                    tasksList.addAll(updatedTasks)
+                                }
                                 selectedTask = null
                                 showTaskCompletedDialog = true
                             },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = GetTaskColorText(selectedTask!!.difficulty),
+                                containerColor = GetTaskColorText(selectedTask!!.difficulty, selectedTask!!.isCompleted),
                                 contentColor = MaterialTheme.colorScheme.onSecondary
                             )
                         ) {
-                            Text("Completar tarea")
+                            Text(getCompleteButtonText(selectedTask!!.isCompleted))
                         }
                     },
                     dismissButton = {
                         Button(
                             onClick = { showTaskDialog = false },
                             colors = ButtonDefaults.buttonColors(
-                                containerColor = GetTaskColorText(selectedTask!!.difficulty),
+                                containerColor = GetTaskColorText(selectedTask!!.difficulty, selectedTask!!.isCompleted),
                                 contentColor = MaterialTheme.colorScheme.onSecondary
                             )
                         ) {
                             Text("Cerrar")
                         }
                     },
-                    containerColor = GetTaskColor(selectedTask!!.difficulty)
+                    containerColor = GetTaskColor(selectedTask!!.difficulty, selectedTask!!.isCompleted)
                 )
             }
             
@@ -786,11 +814,6 @@ fun CalendarScreen(context: Context) {
             
                         if (result) {
                             showTaskCreatedDialog = true
-                        }
-                    }
-                )
-            }
-            
                             // Actualizar la sesión y las tareas
                             val updatedAccount = SessionStorage.getUpdatedSession(context)
                             if (updatedAccount != null) {
@@ -878,6 +901,44 @@ fun CalendarScreen(context: Context) {
                 SettingsDialog(onDismiss = { showSettingsDialog = false })
             }
 
+            if (showLoginRequiredForTask) {
+                AlertDialog(
+                    onDismissRequest = { showLoginRequiredForTask = false },
+                    title = { Text("Sesión requerida", color = MaterialTheme.colorScheme.onBackground) },
+                    text = { 
+                        Text(
+                            "Debes iniciar sesión para poder crear tareas.", 
+                            color = MaterialTheme.colorScheme.onBackground
+                        ) 
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = { 
+                                showLoginRequiredForTask = false 
+                                showLoginDialog = true
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            )
+                        ) {
+                            Text("Iniciar sesión")
+                        }
+                    },
+                    dismissButton = {
+                        Button(
+                            onClick = { showLoginRequiredForTask = false },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            )
+                        ) {
+                            Text("Cancelar")
+                        }
+                    },
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            }
         }
     }
     if (showRewards) {
@@ -1362,7 +1423,7 @@ fun AddTaskDialog(
                                 dueDate = taskDueDate,
                                 dueTime = taskDueTime.withSecond(0).withNano(0),
                                 difficulty = selectedDifficulty,
-                                steps = taskSteps,
+                                steps = convertStringsToSteps(taskSteps),
                                 id = nextId
                             )
                             onAddTask(newTask)
@@ -1741,7 +1802,7 @@ fun TaskNotCreatedDialogNonPremium(
         onDismissRequest = onDismiss,
         title = { Text("Tarea no creada", color = MaterialTheme.colorScheme.onBackground) },
         text = {
-            Text("No se pudo crear la tarea. Ha alcanzado el límite de tareas.\nConsidera completar tareas existentes o usar una cuenta Premium para tener más tareas activas.",
+            Text("No se pudo crear/descompletar la tarea. Ha alcanzado el límite de tareas.\nConsidera completar tareas existentes o usar una cuenta Premium para tener más tareas activas.",
             color = MaterialTheme.colorScheme.onBackground)
         },
         confirmButton = {
@@ -1768,7 +1829,7 @@ fun TaskNotCreatedDialogPremium(
         onDismissRequest = onDismiss,
         title = { Text("Tarea no creada", color = MaterialTheme.colorScheme.onBackground) },
         text = {
-            Text("No se pudo crear la tarea. Ha alcanzado el límite de tareas.\nConsidera completar tareas existentes.",
+            Text("No se pudo crear/descompletar la tarea. Ha alcanzado el límite de tareas.\nConsidera completar tareas existentes.",
             color = MaterialTheme.colorScheme.onBackground)
         },
         confirmButton = {
@@ -1816,16 +1877,6 @@ fun TaskCompletedDialog(
         containerColor = MaterialTheme.colorScheme.surface
     )
 }
-//Funcion para mostrar los pasos tachados
-Text(
-    text = step.text,
-    style = TextStyle(
-        textDecoration = if (step.isCompleted)
-            TextDecoration.LineThrough
-        else
-            TextDecoration.None
-    )
-)
 
 
 // Funcion para mostrar el manual de usuario o tutorial
@@ -2050,9 +2101,12 @@ fun CalendarPreview() {
     }
 }
 
-// Funcion para obtener un color segun la dificultad
+// Funcion para obtener un color segun la dificultad y si la tarea esta completada
 @Composable
-fun GetTaskColor(difficulty: Int): Color {
+fun GetTaskColor(difficulty: Int, isCompleted: Boolean): Color {
+    if (isCompleted) {
+        return SpecialGray
+    }
     return when (difficulty) {
         5 -> SpecialRed
         4 -> SpecialOrange
@@ -2063,9 +2117,12 @@ fun GetTaskColor(difficulty: Int): Color {
     }
 }
 
-// Funcion para obtener un color para texto segun la dificultad
+// Funcion para obtener un color para texto segun la dificultad y si la tarea esta completada
 @Composable
-fun GetTaskColorText(difficulty: Int): Color {
+fun GetTaskColorText(difficulty: Int, isCompleted: Boolean): Color {
+    if (isCompleted) {
+        return SpecialGray2
+    }
     return when (difficulty) {
         5 -> SpecialRed2
         4 -> SpecialOrange2
@@ -2100,6 +2157,21 @@ fun CalculatePointsForTask(task: Task): Int {
     val limitedDaysEarly = daysEarly.coerceIn(0, 7)
     // Regresamos los puntos finales
     return basePoints + (limitedDaysEarly * difficulty)
+}
+
+// Funcion para volver una lista de strings a una lista de steps
+fun convertStringsToSteps(stepStrings: List<String>): MutableList<Step> {
+    return stepStrings.map { Step(it, false) }.toMutableList()
+}
+
+// Funcion para obtener el estatus de la tarea
+fun getStatus(isCompleted: Boolean): String {
+    return if (isCompleted) " (Completada)" else ""
+}
+
+// Funcion para obtener el texto de "Completar tarea" o "Descompletar tarea"
+fun getCompleteButtonText(isCompleted: Boolean): String {
+    return if (isCompleted) "Descompletar tarea" else "Completar tarea"
 }
 
 /*

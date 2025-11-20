@@ -11,6 +11,7 @@ import java.time.LocalDate
 import java.time.LocalTime
 
 object AccountStorage {
+    private const val MAX_TASKS_NON_PREMIUM = 10
     private const val ACCOUNTS_FILE = "accounts.json"
     private val gson: Gson = GsonBuilder()
         .registerTypeAdapter(LocalDate::class.java, LocalDateAdapter())
@@ -106,11 +107,13 @@ object AccountStorage {
         val account = accounts[accountIndex]
         
         // Verificar límite de tareas según si es premium o no
-        if (!isPremium && account.tasks.size >= 5) {
+        val uncompletedTasksCount = account.tasks.count { !it.isCompleted }
+        if (!isPremium && uncompletedTasksCount >= MAX_TASKS_NON_PREMIUM) {
             return false
         }
-        
         account.tasks.add(task)
+        // Mover las tareas completadas al final de la lista
+        account.tasks = account.tasks.sortedWith(compareBy<Task> { it.isCompleted }).toMutableList()
         saveAccounts(context, accounts)
         return true
     }
@@ -186,5 +189,63 @@ object AccountStorage {
     fun getAccountById(context: Context, accountId: Int): Account? {
         val accounts = loadAccounts(context)
         return accounts.find { it.id == accountId }
+    }
+
+    /**
+     * Actualiza el estado de un paso en una tarea específica
+     */
+    fun updateStepInTask(context: Context, accountId: Int, taskId: Int, stepIndex: Int,isCompleted: Boolean) {
+        val accounts = loadAccounts(context).toMutableList()
+        val accountIndex = accounts.indexOfFirst { it.id == accountId }
+        if (accountIndex == -1) return
+        val task = accounts[accountIndex].tasks.find { it.id == taskId } ?: return
+        if (stepIndex in task.steps.indices) {
+            task.steps[stepIndex].isCompleted = isCompleted
+            saveAccounts(context, accounts)
+        }
+    }
+
+    /**
+     * Actualiza una tarea específica en una cuenta
+     */
+    fun updateTaskOfAccount(context: Context, accountId: Int, updatedTask: Task) {
+        val accounts = loadAccounts(context).toMutableList()
+        val accountIndex = accounts.indexOfFirst { it.id == accountId }
+        if (accountIndex == -1) return
+        val account = accounts[accountIndex]
+        val taskIndex = account.tasks.indexOfFirst { it.id == updatedTask.id }
+        if (taskIndex == -1) return
+        // Actualizar la tarea
+        account.tasks[taskIndex] = updatedTask
+        // Si la tarea esta completada, moverla al final de la lista
+        if (updatedTask.isCompleted) {
+            val completedTask = account.tasks.removeAt(taskIndex)
+            account.tasks.add(completedTask)
+        }
+        saveAccounts(context, accounts)
+    }
+
+    /**
+     * Descompleta una tarea específica en una cuenta
+     */
+    fun uncompleteTaskOfAccount(context: Context, accountId: Int, taskId: Int): Boolean {
+        val accounts = loadAccounts(context).toMutableList()
+        val accountIndex = accounts.indexOfFirst { it.id == accountId }
+        if (accountIndex == -1) return false
+        val account = accounts[accountIndex]
+        val uncompletedTasksCount = account.tasks.count { !it.isCompleted }
+        val isPremium = account.isPremium
+        if (!isPremium && uncompletedTasksCount >= MAX_TASKS_NON_PREMIUM) {
+            return false
+        }
+        val taskIndex = account.tasks.indexOfFirst { it.id == taskId }
+        if (taskIndex == -1) return false
+        val task = account.tasks[taskIndex]
+        task.isCompleted = false
+        // Mover la tarea al inicio de la lista
+        val uncompletedTask = account.tasks.removeAt(taskIndex)
+        account.tasks.add(0, uncompletedTask)
+        saveAccounts(context, accounts)
+        return true
     }
 }
