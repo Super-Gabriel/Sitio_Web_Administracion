@@ -16,7 +16,7 @@ data class Task(
     // Dificultad, de 1 a 5
     val difficulty: Int,
     // Pasos para completar la tarea, para poder poner actividades
-    var steps: MutableList<String>,
+    var steps: MutableList<Step>,
     // ID
     val id: Int,
 )

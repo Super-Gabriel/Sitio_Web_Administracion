@@ -602,23 +602,68 @@ fun CalendarScreen(context: Context) {
                                 "Dificultad: ${selectedTask!!.difficulty}/5",
                                 color = MaterialTheme.colorScheme.onSecondary
                             )
+            
+                            // ---------------------
+                            //   SECCIÓN DE PASOS
+                            // ---------------------
                             if (selectedTask!!.steps.isNotEmpty()) {
-                                Text("Pasos:", color = MaterialTheme.colorScheme.onSecondary)
+                                Text(
+                                    "Pasos:",
+                                    color = MaterialTheme.colorScheme.onSecondary
+                                )
+            
                                 selectedTask!!.steps.forEachIndexed { index, step ->
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween,
                                         modifier = Modifier.fillMaxWidth()
                                     ) {
+            
+                                        // Checkbox para marcar/desmarcar
+                                        Checkbox(
+                                            checked = step.isCompleted,
+                                            onCheckedChange = { isChecked ->
+                                                step.isCompleted = isChecked
+            
+                                                if (currentAccount != null) {
+                                                    AccountStorage.updateStepInTask(
+                                                        context,
+                                                        currentAccount!!.id,
+                                                        selectedTask!!.id,
+                                                        index,
+                                                        isChecked
+                                                    )
+            
+                                                    val updatedAccount = SessionStorage.getUpdatedSession(context)
+                                                    if (updatedAccount != null) {
+                                                        currentAccount = updatedAccount
+                                                        SessionStorage.refreshSession(context, updatedAccount)
+                                                    }
+            
+                                                    val updatedTasks = AccountStorage.getTasksForAccount(context, currentAccount!!.id)
+                                                    tasksList.clear()
+                                                    tasksList.addAll(updatedTasks)
+                                                    selectedTask = updatedTasks.find { it.id == selectedTask!!.id }
+                                                }
+                                            }
+                                        )
+            
+                                        // Texto (con tachado si está completado)
                                         Text(
-                                            text = "- $step",
-                                            style = MaterialTheme.typography.bodySmall,
+                                            text = "- ${step.text}",
+                                            style = MaterialTheme.typography.bodySmall.copy(
+                                                textDecoration = if (step.isCompleted)
+                                                    TextDecoration.LineThrough
+                                                else
+                                                    TextDecoration.None
+                                            ),
                                             color = MaterialTheme.colorScheme.onSecondary,
                                             modifier = Modifier.weight(1f)
                                         )
+            
+                                        // Botón para borrar el paso
                                         IconButton(
                                             onClick = {
-                                                // Quitar paso de la tarea en la cuenta
                                                 if (currentAccount != null) {
                                                     AccountStorage.removeStepFromTaskInAccount(
                                                         context,
@@ -626,26 +671,23 @@ fun CalendarScreen(context: Context) {
                                                         selectedTask!!.id,
                                                         index
                                                     )
-                                                    // Actualizar la sesión
+            
                                                     val updatedAccount = SessionStorage.getUpdatedSession(context)
                                                     if (updatedAccount != null) {
                                                         currentAccount = updatedAccount
                                                         SessionStorage.refreshSession(context, updatedAccount)
                                                     }
-                                                    // Obtenemos las tareas actualizadas
+            
                                                     val updatedTasks = AccountStorage.getTasksForAccount(context, currentAccount!!.id)
-                                                    // Refrescamos la lista de tareas
                                                     tasksList.clear()
                                                     tasksList.addAll(updatedTasks)
-                                                    // Actualizar la tarea seleccionada
                                                     selectedTask = updatedTasks.find { it.id == selectedTask!!.id }
                                                 }
                                             }
                                         ) {
                                             Icon(
-                                                imageVector = Icons.Default.CheckCircle,
-                                                contentDescription = "Marcar paso como completado",
-                                                tint = MaterialTheme.colorScheme.primary
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = "Eliminar paso"
                                             )
                                         }
                                     }
@@ -658,29 +700,29 @@ fun CalendarScreen(context: Context) {
                             onClick = {
                                 showTaskDialog = false
                                 lastPointsEarned = 0
-                                // Obtener puntos si el usuario esta logueado
+            
+                                // Obtener puntos si el usuario está logueado
                                 if (loggedIn && currentAccount != null) {
-                                    // Calcular los puntos a otorgar
                                     val pointsEarned = CalculatePointsForTask(selectedTask!!)
                                     lastPointsEarned = pointsEarned
-                                    // Actualizar puntos de la cuenta
+            
                                     val updatedAccount = AccountStorage.addPointsToAccount(
                                         context,
                                         currentAccount!!.id,
                                         pointsEarned
                                     )
-                                    // Actualizar la cuenta actual y la sesión
                                     if (updatedAccount != null) {
                                         currentAccount = updatedAccount
                                         SessionStorage.refreshSession(context, updatedAccount)
                                     }
                                 }
-                                // Eliminar la tarea de la cuenta
+            
+                                // Eliminar la tarea
                                 selectedTask?.let { task ->
                                     tasksList.remove(task)
                                     if (currentAccount != null) {
                                         AccountStorage.removeTaskFromAccount(context, currentAccount!!.id, task.id)
-                                        // Actualizar la sesión
+            
                                         val updatedAccount = SessionStorage.getUpdatedSession(context)
                                         if (updatedAccount != null) {
                                             currentAccount = updatedAccount
@@ -688,6 +730,7 @@ fun CalendarScreen(context: Context) {
                                         }
                                     }
                                 }
+            
                                 selectedTask = null
                                 showTaskCompletedDialog = true
                             },
@@ -713,31 +756,33 @@ fun CalendarScreen(context: Context) {
                     containerColor = GetTaskColor(selectedTask!!.difficulty)
                 )
             }
-
+            
             if (showTaskCompletedDialog) {
                 TaskCompletedDialog(
                     pointsEarned = lastPointsEarned,
                     onDismiss = { showTaskCompletedDialog = false }
                 )
             }
-
+            
             if (showAddTaskDialog) {
                 AddTaskDialog(
-                    onDismiss = {
-                        showAddTaskDialog = false
-                    },
+                    onDismiss = { showAddTaskDialog = false },
                     onAddTask = { newTask ->
                         if (currentAccount == null) {
-                            // Mostrar diálogo específico para cuando no hay sesión
                             showLoginRequiredForTask = true
                             showAddTaskDialog = false
                             return@AddTaskDialog
                         }
-                        
+            
                         val result = AccountStorage.addTaskToAccount(context, currentAccount!!.id, newTask, isPremium)
-                        
+            
                         if (result) {
                             showTaskCreatedDialog = true
+                        }
+                    }
+                )
+            }
+            
                             // Actualizar la sesión y las tareas
                             val updatedAccount = SessionStorage.getUpdatedSession(context)
                             if (updatedAccount != null) {
@@ -1763,6 +1808,17 @@ fun TaskCompletedDialog(
         containerColor = MaterialTheme.colorScheme.surface
     )
 }
+//Funcion para mostrar los pasos tachados
+Text(
+    text = step.text,
+    style = TextStyle(
+        textDecoration = if (step.isCompleted)
+            TextDecoration.LineThrough
+        else
+            TextDecoration.None
+    )
+)
+
 
 // Funcion para mostrar el manual de usuario o tutorial
 @Composable
