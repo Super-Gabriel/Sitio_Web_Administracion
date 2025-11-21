@@ -40,11 +40,14 @@ val DarkYellow = Color(0xFFC5AF2D)
 val DarkBlueGray = Color(0xFF4F6A8F)
 val DarkBlue = Color(0xFF023047)
 
-val LightPink1 = Color(0xFFF379A4)
+
+val LightPink1 = Color(0xFFE17BA0)
+val LightPink2 = Color(0xFFFC7CA9)
+
+val LightPink3 = Color(0xFFBE4572)
 val MediumPink1 = Color(0xFFE14A7B)
-val LightPink2 = Color(0xFFB93B68)
-val DarkPink2 = Color(0xFFC93568)
-val Pink = Color(0xFFAD1E4F)
+val DarkPink2 = Color(0xFFB21F52)
+val Pink = Color(0xFFDE1960)
 
 
 val LightBlue1 = Color(0xFF64B5F6)
@@ -72,47 +75,48 @@ val LightGreen5 = Color(0xFFC5E1A5)
 val DarkGreen1 = Color(0xFF2E7D32)
 val DarkGreen5 = Color(0xFF1B5E20)
 
-val LightYellow1 = Color(0xFFFFF176)
-val LightYellow2 = Color(0xFFFFF59D)
+val LightYellow1 = Color(0xFFC4A418)
+val LightYellow2 = Color(0xFFFFE79C)
 val LightYellow3 = Color(0xFFFFF9C4)
 
-val LightYellow4 = Color(0xFFAFA960)
+val LightYellow4 = Color(0xFFF5DB70)
 
-val DarkYellow1 = Color(0xFFFFF9C4)
-
-val DarkYellow2 = Color(0xFFFFF9C4)
-
-val DarkYellow3 = Color(0xFFFFF9C4)
+val Yellow4 = Color(0xFF96831F)
 
 
-val LightPurple1 = Color(0xFFAFA4F8)
-val LightPurple2 = Color(0xFF7C69F1)
-val LightPurple3 = Color(0xFF5B45E3)
-val DarkPurple1 = Color(0xFF412DC5)
-val DarkPurple2 = Color(0xFF2B1B85)
+val Yellow5 = Color(0xFFFCE875)
+val Yellow6 = Color(0xFFFFE060)
 
-val DarkPurple3 = Color(0xFF1F1559)
+val LightPurple1 = Color(0xFFB3A4F8)
+val LightPurple2 = Color(0xFF8D69F1)
+val LightPurple3 = Color(0xFF8F45E3)
+val DarkPurple1 = Color(0xFF672DC5)
+val DarkPurple2 = Color(0xFF4C1B85)
+
+val DarkPurple3 = Color(0xFF3D1559)
 
 
-val LightOrange2 = Color(0xFFFFCC80)
+val LightOrange2 = Color(0xFFFFAE63)
 
+
+val Orange1 = Color(0xFFFF5900)
 val DarkOrange1 = Color(0xFFF57C00)
 val LightOrange4 = Color(0xFFFFB380)
-val LightOrange5 = Color(0xFFFFA460)
+val LightOrange5 = Color(0xFFFF993C)
 val MediumOrange2 = Color(0xFFFF8C42)
 
 val SoftGray1 = Color(0xFFE8E3E3)
+val SoftGray2 = Color(0xFFB2B2B2)
 val DarkGray1 = Color(0xFF424242)
 val DarkGray2 = Color(0xFF171616)
 
-val PastelRed1 = Color(0xFFFF8A80)
+val PastelRed1 = Color(0xFFFF9A8B)
+val PastelOrange1 = Color(0xFFFFB680)
 val PastelYellow1 = Color(0xFFFFF59D)
-val PastelLightBlue1 = Color(0xFF80D8FF)
-
+val PastelGreen1 = Color(0xFFCCFF98)
+val PastelLightBlue1 = Color(0xFFB0E9FF)
+val PastelPurple1 = Color(0xFFA078D5)
 val PastelDarkBlue1 = Color(0xFF3B55AD)
-val PastelPurple1 = Color(0xFFB480FC)
-
-val PastelGreen1 = Color(0xFF80FCAD)
 
 
 val SpecialRed = Color(0xFFFDA0AA)

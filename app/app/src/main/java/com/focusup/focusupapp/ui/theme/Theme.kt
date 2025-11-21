@@ -5,6 +5,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import com.focusup.focusupapp.ui.theme.Black
 
 private val LightColorScheme = lightColorScheme(
     // Es usada para la top bar y bottom bar
@@ -92,16 +93,16 @@ private val DarkColorScheme2 = darkColorScheme(
 val ThemePink = lightColorScheme(
     surfaceVariant = DarkPink2,
     onSurfaceVariant = White,
-    surface = LightPink2,
+    surface = LightPink3,
     secondary = LightPink2,
     onSecondary = Black,
-    primary = DarkPink2,
+    primary = Pink,
     onPrimary = White,
     background = LightPink1,
     onBackground = White
 )
 
-val ThemeOcean = darkColorScheme(
+val ThemeOcean = lightColorScheme(
     surfaceVariant = DarkBlue2,
     onSurfaceVariant = White,
     surface = Blue3,
@@ -138,63 +139,63 @@ val ThemeGreen = lightColorScheme(
 )
 
 val ThemeYellow = lightColorScheme(
-    surfaceVariant = DarkYellow2,
-    onSurfaceVariant = White,
+    surfaceVariant = Yellow6,
+    onSurfaceVariant = Yellow4,
     surface = LightYellow3,
     secondary = LightYellow4,
-    onSecondary = Black,
+    onSecondary = Yellow4,
     primary = LightYellow1,
     onPrimary = White,
-    background = LightYellow2,
-    onBackground = LightYellow1
+    background = LightYellow4,
+    onBackground = Yellow4
 )
 
-val ThemePurple = darkColorScheme(
+val ThemePurple = lightColorScheme(
     surfaceVariant = DarkPurple2,
     onSurfaceVariant = White,
     surface = LightPurple1,
     secondary = DarkPurple2,
-    onSecondary = White,
+    onSecondary = Black,
     primary = DarkPurple1,
     onPrimary = White,
     background = LightPurple2,
-    onBackground = DarkPurple3
+    onBackground = White
 )
 
 val ThemeOrange = lightColorScheme(
     surfaceVariant = DarkOrange1,
     onSurfaceVariant = White,
-    surface = LightOrange5,
-    secondary = LightOrange2,
+    surface = LightOrange2,
+    secondary = MediumOrange2,
     onSecondary = Black,
-    primary = DarkOrange1,
+    primary = Orange1,
     onPrimary = White,
     background = LightOrange5,
-    onBackground = MediumOrange2
+    onBackground = White
 )
 
 val ThemePanda = lightColorScheme(
     surfaceVariant = DarkGray2,
     onSurfaceVariant = White,
-    surface = White,
+    surface = SoftGray2,
     secondary = SoftGray1,
     onSecondary = Black,
     primary = DarkGray1,
     onPrimary = White,
-    background = SoftGray1,
+    background = White,
     onBackground = Black
 )
 
 val ThemeRainbow = lightColorScheme(
-    surfaceVariant = PastelRed1,
-    onSurfaceVariant = White,
-    surface = PastelLightBlue1,
+    surfaceVariant = PastelLightBlue1,
+    onSurfaceVariant = PastelDarkBlue1,
+    surface = PastelPurple1,
     secondary = PastelYellow1,
-    onSecondary = Black,
-    primary = PastelDarkBlue1,
-    onPrimary = White,
-    background = PastelRed1,
-    onBackground = White
+    onSecondary = PastelDarkBlue1,
+    primary = PastelRed1,
+    onPrimary = PastelDarkBlue1,
+    background = PastelGreen1,
+    onBackground = PastelDarkBlue1
 )
 @Composable
 fun FocusUpTheme(
