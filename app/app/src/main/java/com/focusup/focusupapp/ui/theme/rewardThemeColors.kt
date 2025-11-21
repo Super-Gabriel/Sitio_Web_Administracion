@@ -4,77 +4,71 @@ import androidx.compose.ui.graphics.Color
 
 
 val rewardThemeColors: Map<Int, List<Color>> = mapOf(
-    5 to listOf(
+    5 to listOf(// Pink
+        DarkPink2,
+        LightPink3,
         LightPink2,
-        White,
+        Pink,
         LightPink1,
-        MediumPink1,
-        DarkPink2
+
     ),
 
-    6 to listOf( // Ocean
-        LightBlue4,
-        White,
-        LightBlue5,
-        DarkBlue6,
+    6 to listOf(// Ocean
         DarkBlue2,
-        DarkBlue1
+        White,
+        Blue3,
+        DarkBlue6,
+        DarkBlue4,
+        LightBlue4
     ),
     7 to listOf( // Green
-        LightGreen2,
+        DarkGreen2,
         White,
-        LightGreen3,
+        LightGreen1,
         LightGreen1,
         DarkGreen1,
-        DarkGreen5
+        LightGreen2,
+        DarkGreen4
     ),
     8 to listOf( // Yellow
-        LightYellow2,
-        White,
+        Yellow6,
+        Yellow4,
         LightYellow3,
+        LightYellow4,
         LightYellow1,
+        White,
     ),
     9 to listOf( // Purple
-        LightPurple2,
+        DarkPurple2,
         White,
-        LightPurple3,
         LightPurple1,
         DarkPurple1,
-
+        LightPurple2,
 
 
         ),
     10 to listOf( // Orange
-        LightOrange4,
-        White,
-        LightOrange5,
-        LightOrange2,
-        White,
         DarkOrange1,
         White,
+        LightOrange2,
+        MediumOrange2,
+        Orange1,
         LightOrange5,
-        MediumOrange2
     ),
     11 to listOf( // Panda
-        SoftGray1,
+        DarkGray2,
         White,
-        White,
         SoftGray1,
-        Black,
         DarkGray1,
         White,
-        SoftGray1,
         Black
     ),
     12 to listOf( // Rainbow
-        PastelRed1,
-        White,
         PastelLightBlue1,
-        PastelYellow1,
-        White,
         PastelPurple1,
-        White,
+        PastelYellow1,
         PastelRed1,
-        White
+        PastelGreen1,
+
     )
 )

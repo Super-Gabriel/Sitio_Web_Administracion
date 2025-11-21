@@ -1026,7 +1026,7 @@ fun RewardsScreen(
         Surface(
             modifier = Modifier
                 .fillMaxWidth()
-                .wrapContentHeight()
+                .height(surfaceHeight)
                 .clip(RoundedCornerShape(16.dp)),
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 4.dp
@@ -1045,13 +1045,13 @@ fun RewardsScreen(
                         text = "Recompensas",
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
                         text = "Puntos: $points",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurface
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 }
 
@@ -1090,16 +1090,16 @@ fun RewardsScreen(
                                     modifier = Modifier.size(56.dp)
                                 )
 
-                                Text(r.title, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurface)
+                                Text(r.title, fontWeight = FontWeight.Medium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.height(6.dp))
-                                Text("${r.cost} pts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurface)
+                                Text("${r.cost} pts", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 Spacer(Modifier.height(8.dp))
 
                                 if (isBought) {
                                     Text(
                                         "Comprado",
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier
                                             .height(36.dp)
                                             .width(120.dp)
@@ -1191,6 +1191,7 @@ fun ThemeDiagonalCirclePreview(
     fallbackColors: List<Color> = listOf(Color.LightGray, Color.Gray, Color.DarkGray)
 ) {
     val colors = (rewardThemeColors[themeId] ?: fallbackColors).distinct()
+    val strokeColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     Canvas(modifier = modifier.size(diameterDp)) {
         val w = size.width
@@ -1218,6 +1219,13 @@ fun ThemeDiagonalCirclePreview(
                 }
             }
         }
+        val strokeWidthPx = 4.dp.toPx()
+        drawCircle(
+            color = strokeColor,
+            radius = (w / 2f) - strokeWidthPx / 2f, // ajustar para que no se corte
+            center = center,
+            style = Stroke(width = strokeWidthPx)
+        )
     }
 }
 
