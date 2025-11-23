@@ -52,7 +52,8 @@ class AccountStorageTest {
         dueTime = java.time.LocalTime.of(15, 0),
         difficulty = 3,
         steps = mutableListOf(Step("Estudiar capitulo 1", false), Step("Hacer ejercicios", true)),
-        id = 1
+        id = 1,
+        isCompleted = false
     )
 
     // Tarea de prueba 2
@@ -63,7 +64,20 @@ class AccountStorageTest {
         dueTime = java.time.LocalTime.of(23, 59),
         difficulty = 5,
         steps = mutableListOf(),
-        id = 2
+        id = 2,
+        isCompleted = false
+    )
+
+    // Tarea de prueba 3
+    private val task3 = Task(
+        title = "Tarea Extra",
+        description = "Hacer la tarea extra",
+        dueDate = java.time.LocalDate.of(2024, 7, 5),
+        dueTime = java.time.LocalTime.of(12, 0),
+        difficulty = 2,
+        steps = mutableListOf(Step("Resolver problema 1", true)),
+        id = 3,
+        isCompleted = true
     )
 
     @Before
@@ -176,8 +190,59 @@ class AccountStorageTest {
     // updateAccount
 
     // getAccountById
+    @Test
+    fun testGetAccountById() {
+        AccountStorage.saveAccounts(context, listOf(account1, account2))
+        println("Probando obtencion de cuenta por ID...")
+        val acc1 = AccountStorage.getAccountById(context, account1.id)
+        assertNotNull(acc1)
+        assertEquals("Pedrito", acc1!!.name)
+        println("Paso la verificacion de cuenta 1 por ID")
+        val acc2 = AccountStorage.getAccountById(context, account2.id)
+        assertNotNull(acc2)
+        assertEquals("Paquito", acc2!!.name)
+        println("Paso la verificacion de cuenta 2 por ID")
+        val accInvalid = AccountStorage.getAccountById(context, 999)
+        assertNull(accInvalid)
+        println("Paso la verificacion de cuenta invalida por ID")
+        println("Obtencion de cuenta por ID completada correctamente")
+        println()
+    }
 
     // updateStepInTask
+    @Test
+    fun testUpdateStepInTask() {
+        AccountStorage.saveAccounts(context, listOf(account1))
+        AccountStorage.addTaskToAccount(context, account1.id, task1, account1.isPremium)
+        println("Probando actualizacion de paso en tarea...")
+        AccountStorage.updateStepInTask(context, account1.id, task1.id, 0, true)
+        val loadedAccounts = AccountStorage.loadAccounts(context)
+        val loadedAccount = loadedAccounts.find { it.id == account1.id }
+        val loadedTask = loadedAccount!!.tasks.find { it.id == task1.id }
+        val updatedStep = loadedTask!!.steps[0]
+        assertTrue(updatedStep.isCompleted)
+        println("Paso la verificacion de actualizacion de paso en tarea")
+        println("Actualizacion de paso en tarea completada correctamente")
+        println()
+    }
 
     // uncompleteTaskOfAccount
+    @Test
+    fun testUncompleteTaskOfAccount() {
+        val completedTask = task3
+        AccountStorage.saveAccounts(context, listOf(account1))
+        AccountStorage.addTaskToAccount(context, account1.id, completedTask, account1.isPremium)
+        println("Probando descompletar tarea en cuenta...")
+        val result = AccountStorage.uncompleteTaskOfAccount(context, account1.id, completedTask.id)
+        assertTrue(result)
+        println("Paso la verificacion de resultado de descompletar tarea en cuenta")
+        val loadedAccounts = AccountStorage.loadAccounts(context)
+        val loadedAccount = loadedAccounts.find { it.id == account1.id }
+        val loadedTask = loadedAccount!!.tasks.find { it.id == completedTask.id }
+        assertNotNull(loadedTask)
+        assertFalse(loadedTask!!.isCompleted)
+        println("Paso la verificacion de descompletar tarea en cuenta")
+        println("Descompletar tarea en cuenta completada correctamente")
+        println()
+    }
 }

@@ -64,6 +64,7 @@ import com.focusup.focusupapp.ui.theme.SpecialBlue
 import com.focusup.focusupapp.ui.theme.SpecialBlue2
 import com.focusup.focusupapp.ui.theme.SpecialGray
 import com.focusup.focusupapp.ui.theme.SpecialGray2
+import com.focusup.focusupapp.ui.theme.Black
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -650,12 +651,17 @@ fun CalendarScreen(context: Context) {
                                                     tasksList.addAll(updatedTasks)
                                                     selectedTask = updatedTasks.find { it.id == selectedTask!!.id }
                                                 }
-                                            }
+                                            },
+                                            colors = CheckboxDefaults.colors(
+                                                checkmarkColor = Black,
+                                                uncheckedColor = Black,
+                                                checkedColor = GetTaskColorText(selectedTask!!.difficulty, selectedTask!!.isCompleted)
+                                            )
                                         )
             
                                         // Texto (con tachado si esta completado)
                                         Text(
-                                            text = "- ${step.text}",
+                                            text = "${step.text}",
                                             style = MaterialTheme.typography.bodySmall.copy(
                                                 textDecoration = if (step.isCompleted)
                                                     TextDecoration.LineThrough
@@ -692,7 +698,8 @@ fun CalendarScreen(context: Context) {
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Delete,
-                                                contentDescription = "Eliminar paso"
+                                                contentDescription = "Eliminar paso",
+                                                tint = MaterialTheme.colorScheme.onSecondary
                                             )
                                         }
                                     }
