@@ -115,12 +115,12 @@ val ThemeOcean = lightColorScheme(
 )
 
 val ThemeRed = lightColorScheme(
-    surfaceVariant = DarkRed1 ,
+    surfaceVariant = DarkRed2 ,
     onSurfaceVariant = White,
-    surface = LightRed3,
+    surface = LightRed4,
     secondary = LightRed1,
     onSecondary = Black,
-    primary = DarkRed1,
+    primary = DarkRed3,
     onPrimary = White,
     background = LightRed2,
     onBackground = White
@@ -130,7 +130,7 @@ val ThemeGreen = lightColorScheme(
     surfaceVariant = DarkGreen2 ,
     onSurfaceVariant = White,
     surface = LightGreen1,
-    secondary = LightGreen1,
+    secondary = LightGreen2,
     onSecondary = Black,
     primary = DarkGreen1,
     onPrimary = White,
@@ -187,15 +187,78 @@ val ThemePanda = lightColorScheme(
 )
 
 val ThemeRainbow = lightColorScheme(
-    surfaceVariant = PastelLightBlue1,
-    onSurfaceVariant = PastelDarkBlue1,
-    surface = PastelPurple1,
+    surfaceVariant = PastelPurple1,
+    onSurfaceVariant = White,
+    surface = PastelGreen1,
     secondary = PastelYellow1,
-    onSecondary = PastelDarkBlue1,
+    onSecondary = PastelDarkBluePurple1,
     primary = PastelRed1,
-    onPrimary = PastelDarkBlue1,
-    background = PastelGreen1,
-    onBackground = PastelDarkBlue1
+    onPrimary = PastelDarkBluePurple1,
+    background = PastelYellow1,
+    onBackground = PastelDarkBluePurple1
+)
+
+val ThemeVolcano = lightColorScheme(
+    surfaceVariant = DarkRed4,
+    onSurfaceVariant = Yellow7,
+    surface = Orange2,
+    secondary = Orange3,
+    onSecondary = Black,
+    primary = Orange3,
+    onPrimary = Black,
+    background = DarkGray3,
+    onBackground = Yellow7
+)
+
+val ThemeGalaxy = lightColorScheme(
+    surfaceVariant = Black,
+    onSurfaceVariant = White,
+    surface = Purple1,
+    secondary = LightPink2,
+    onSecondary = White,
+    primary = SpaceBlue,
+    onPrimary = Black,
+    background = DarkBlue3,
+    onBackground = White
+)
+
+
+val ThemeVampire = lightColorScheme(
+    surfaceVariant = GrayBlueGreen,
+    onSurfaceVariant = White,
+    surface = RedBlood,
+    secondary = BlueGray,
+    onSecondary = Black,
+    primary = DarkGray3,
+    onPrimary = White,
+    background = Wine,
+    onBackground = White
+)
+
+
+
+val ThemeCake = lightColorScheme(
+    surfaceVariant = PinkCake,
+    onSurfaceVariant = White,
+    surface = GreenCake,
+    secondary = GreenBlue,
+    onSecondary = Black,
+    primary = YellowCake,
+    onPrimary = Pink,
+    background = White,
+    onBackground = DarkBlue5
+)
+
+val ThemeWaterMelon = lightColorScheme(
+    surfaceVariant = DarkGreen,
+    onSurfaceVariant = Black,
+    surface = Red5,
+    secondary = White,
+    onSecondary = Black,
+    primary = Black,
+    onPrimary = White,
+    background = Red4,
+    onBackground = Black
 )
 @Composable
 fun FocusUpTheme(
@@ -205,18 +268,24 @@ fun FocusUpTheme(
     val themeId = themeState.value
 
     val colorScheme = when (themeId) {
-        1 -> LightColorScheme2
-        2 -> DarkColorScheme2
-        3 -> LightColorScheme
-        4 -> DarkColorScheme
-        5 -> ThemePink
-        6 -> ThemeOcean
-        7 -> ThemeGreen
-        8 -> ThemeYellow
-        9 -> ThemePurple
-        10 -> ThemeOrange
-        11 -> ThemePanda
-        12 -> ThemeRainbow
+        ThemeIds.LIGHT2 -> LightColorScheme2
+        ThemeIds.DARK2  -> DarkColorScheme2
+        ThemeIds.LIGHT1 -> LightColorScheme
+        ThemeIds.DARK1  -> DarkColorScheme
+        ThemeIds.PINK   -> ThemePink
+        ThemeIds.OCEAN  -> ThemeOcean
+        ThemeIds.GREEN  -> ThemeGreen
+        ThemeIds.YELLOW -> ThemeYellow
+        ThemeIds.RED    -> ThemeRed
+        ThemeIds.PURPLE -> ThemePurple
+        ThemeIds.ORANGE -> ThemeOrange
+        ThemeIds.PANDA  -> ThemePanda
+        ThemeIds.RAINBOW-> ThemeRainbow
+        ThemeIds.VOLCANO -> ThemeVolcano
+        ThemeIds.GALAXY -> ThemeGalaxy
+        ThemeIds.VAMPIRE  -> ThemeVampire
+        ThemeIds.CAKE   -> ThemeCake
+        ThemeIds.WATERMELON   -> ThemeWaterMelon
 
         else -> LightColorScheme2
     }

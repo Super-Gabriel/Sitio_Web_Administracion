@@ -118,6 +118,14 @@ import androidx.compose.ui.text.style.TextDecoration
 import com.focusup.focusupapp.model.Step
 
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 
 
 // Crear canal de notificacion
@@ -191,9 +199,16 @@ class MainActivity : ComponentActivity() {
         }
         createNotificationChannel(this)
         scheduleDailyReminder(this)
+
+        val defaultTheme = AppSettings.getTheme(this)
+
+        val sessionAccount = SessionStorage.getUpdatedSession(this)
+
+        val initialTheme = sessionAccount?.selectedThemeId ?: defaultTheme
+
         val savedTheme = AppSettings.getTheme(this)
         setContent {
-            val themeState = remember { mutableStateOf(savedTheme) }
+            val themeState = remember { mutableStateOf(initialTheme) }
             CompositionLocalProvider(LocalThemeId provides themeState) {
                 FocusUpTheme {
                     CalendarScreen(context = this)
@@ -241,6 +256,8 @@ fun CalendarScreen(context: Context) {
     }
 
     val tasks = tasksList
+
+    val themeState = LocalThemeId.current
 
     val tasksByDay: Map<LocalDate, List<Task>> =
         daysOfMonth.associateWith { day ->
@@ -394,6 +411,10 @@ fun CalendarScreen(context: Context) {
                                         currentAccount = null
                                         tasksList.clear()
                                         expanded = false
+
+                                        val defaultTheme = AppSettings.getTheme(context)
+                                        themeState.value = defaultTheme
+
                                     }
                                 )
                             }
@@ -908,7 +929,14 @@ fun CalendarScreen(context: Context) {
             }
 
             if (showSettingsDialog) {
-                SettingsDialog(onDismiss = { showSettingsDialog = false })
+                SettingsDialog(
+                    currentAccount = currentAccount,
+                    onDismiss = { showSettingsDialog = false },
+                    onAccountRefresh = { updated ->
+                        currentAccount = updated
+                        loggedIn = true
+                    }
+                )
             }
 
             if (showLoginRequiredForTask) {
@@ -999,11 +1027,18 @@ fun RewardsScreen(
         Reward(1, "Tema Rosa", 100,5),
         Reward(2, "Tema Oceano", 100,6),
         Reward(3, "Tema Verde", 100,7),
-        Reward(4, "Tema Amarillo 4", 100,8),
-        Reward(5, "Tema Morado", 100,9),
-        Reward(6, "Tema Naranja", 100,10),
-        Reward(7, "Tema Panda", 100,11),
-        Reward(8, "Tema Arcoiris", 100, 12)
+        Reward(4, "Tema Amarillo", 100,8),
+        Reward(4, "Tema Rojo", 100,9),
+        Reward(5, "Tema Morado", 100,10),
+        Reward(6, "Tema Naranja", 100,11),
+        Reward(7, "Tema Panda", 100,12),
+        Reward(8, "Tema Arcoiris", 100, 13) ,
+        Reward(4, "Tema Volcan", 100,14),
+        Reward(4, "Tema Galaxia", 100,15),
+        Reward(5, "Tema Vampiro", 100,16),
+        Reward(6, "Tema Pastel", 100,17),
+        Reward(7, "Tema Sandia", 100,18)
+
     )
 
     val purchasedIds = remember { mutableStateSetOf<Int>() }
@@ -1080,7 +1115,7 @@ fun RewardsScreen(
                     contentPadding = PaddingValues(8.dp)
                 ) {
                     items(rewards) { r ->
-                        val isBought = purchasedIds.contains(r.id) || (currentAccount?.purchasedRewards?.contains(r.id) ?: false)
+                        val isBought = purchasedIds.contains(r.themeId) || (currentAccount?.purchasedRewards?.contains(r.themeId) ?: false)
 
                         Surface(
                             modifier = Modifier
@@ -1153,12 +1188,12 @@ fun RewardsScreen(
                             Button(onClick = {
                                 val acc = currentAccount ?: return@Button
                                 processingId = reward.id
-                                val updated = AccountStorage.purchaseReward(context, acc.id, reward.id, reward.cost)
+                                val updated = AccountStorage.purchaseReward(context, acc.id, reward.themeId, reward.cost)
                                 if (updated == null) {
                                     Toast.makeText(context, "No se pudo completar la compra", Toast.LENGTH_SHORT).show()
                                 } else {
                                     onAccountRefresh?.invoke(updated)
-                                    purchasedIds.add(reward.id)
+                                    purchasedIds.add(reward.themeId)
                                     Toast.makeText(context, "Recompensa canjeada", Toast.LENGTH_SHORT).show()
                                 }
                                 processingId = null
@@ -1213,8 +1248,8 @@ fun ThemeDiagonalCirclePreview(
         }
 
         val stripeCount = colors.size.coerceAtLeast(1)
-        val stripeWidth = (w * 1.4f) / stripeCount
-        val startX = -w * 0.1f - stripeWidth
+        val stripeWidth = (w * 1f) / stripeCount
+        val startX = 0f
 
         clipPath(circlePath) {
             rotate(degrees = stripeAngleDegrees, pivot = center) {
@@ -1912,22 +1947,27 @@ fun UserManualDialog(
     onDismiss: () -> Unit,
 ) {
     var currentPage by remember { mutableStateOf(0) }
-    val totalPages = 5
+    val totalPages = 8
     // Titulo y descripcion de cada pagina
     val pageContents = listOf(
         Pair("Bienvenido a FocusUp", "¡Tu asistente personal para mantenerte enfocado y organizado!"),
+        Pair("Cuentas", "Registra e inicia sesion en una cuenta para poder usar las funciones de la app."),
         Pair("Agregar Tareas", "Crea tareas con detalles como fecha, hora, dificultad y pasos a seguir."),
         Pair("Visualizar Tareas", "Consulta tus tareas en un calendario mensual."),
         Pair("Notificaciones", "Recibe recordatorios para tus tareas importantes."),
-        Pair("Cuenta Premium", "Desbloquea funciones exclusivas y mejora tu experiencia.")
+        Pair("Gana Recompensas", "Termina tareas, gana puntos y compra temas en la tienda."),
+        Pair("Configuracion", "Modifica la hora de notificaciones y cambia los temas de la app."),
+        Pair("Cuenta Premium", "Desbloquea funciones exclusivas y mejora tu experiencia."),
     )
     // Imagenes de cada pagina, van en app/src/main/res/drawable/
     val pageImages = listOf(
-        R.drawable.tutorial_1,
-        R.drawable.tutorial_2,
-        R.drawable.tutorial_3,
-        R.drawable.tutorial_4,
-        R.drawable.tutorial_5
+        R.drawable.logo,
+        R.drawable.manual_cuenta,
+        R.drawable.manual_agregar_tarea,
+        R.drawable.manual_recordatorio,
+        R.drawable.manual_tienda,
+        R.drawable.manual_configuracion,
+        R.drawable.manual_premium
     )
     // Contenido de la pagina actual
     val currentContent = pageContents[currentPage]
@@ -1996,12 +2036,21 @@ fun UserManualDialog(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsDialog(
-    onDismiss: () -> Unit
+    currentAccount: Account? = null,
+    onDismiss: () -> Unit,
+    onAccountRefresh: ((Account) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val themeState = LocalThemeId.current
     var hour by remember { mutableStateOf(AppSettings.getReminderHour(context)) }
     var minute by remember { mutableStateOf(AppSettings.getReminderMinute(context)) }
+
+    val builtInThemeIds = listOf(
+        ThemeIds.LIGHT1,
+        ThemeIds.DARK1,
+        ThemeIds.LIGHT2,
+        ThemeIds.DARK2
+    )
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
@@ -2009,22 +2058,20 @@ fun SettingsDialog(
             tonalElevation = 4.dp,
             color = MaterialTheme.colorScheme.background,
             modifier = Modifier
-                .fillMaxWidth()
-                .fillMaxHeight(0.7f)
-                .padding(16.dp)
         ) {
             Column(
                 modifier = Modifier
+                    .height(520.dp)
                     .padding(16.dp)
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState()),
-                verticalArrangement = Arrangement.spacedBy(20.dp)
             ) {
                 Text(
                     "Configuraciones",
                     style = MaterialTheme.typography.titleLarge,
                     color = MaterialTheme.colorScheme.onBackground
                 )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
                 Column {
                     Text(
                         "Hora de notificación actual: %02d:%02d".format(hour, minute),
@@ -2050,7 +2097,6 @@ fun SettingsDialog(
                         Text("Modificar hora")
                     }
                 }
-                var expanded by remember { mutableStateOf(false) }
                 val themes = listOf(
                     "Claro 1" to ThemeIds.LIGHT1,
                     "Oscuro 1" to ThemeIds.DARK1,
@@ -2060,57 +2106,172 @@ fun SettingsDialog(
                     "Océano" to ThemeIds.OCEAN,
                     "Verde" to ThemeIds.GREEN,
                     "Amarillo" to ThemeIds.YELLOW,
+                    "Rojo" to ThemeIds.RED,
                     "Morado" to ThemeIds.PURPLE,
                     "Naranja" to ThemeIds.ORANGE,
                     "Panda" to ThemeIds.PANDA,
-                    "Arcoíris" to ThemeIds.RAINBOW
+                    "Arcoíris" to ThemeIds.RAINBOW,
+                    "Volcan" to ThemeIds.VOLCANO,
+                    "Galaxia" to ThemeIds.GALAXY,
+                    "Vampiro" to ThemeIds.VAMPIRE,
+                    "Pastel" to ThemeIds.CAKE,
+                    "Sandia" to ThemeIds.WATERMELON,
+                    )
 
-                )
-                val selectedThemeLabel = themes.firstOrNull { it.second == themeState.value }?.first ?: "Seleccionar tema"
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                ) {
-                    Text("Tema de la app", color = MaterialTheme.colorScheme.onBackground)
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = !expanded }
-                    ) {
-                        OutlinedTextField(
-                        value = selectedThemeLabel,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text("Selecciona un tema") },
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
-                        },
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(),
+
+
+                val gridState = rememberLazyGridState()
+                val purchasedIds = remember(currentAccount) {
+                    currentAccount?.purchasedRewards?.toSet() ?: emptySet()
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Text("Tema de la app", color = MaterialTheme.colorScheme.onBackground)
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    state = gridState,
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp)
+                ) {items(themes) { (label, id) ->
+                    val isLocked = if (currentAccount == null) {
+                        !builtInThemeIds.contains(id)
+                    } else {
+                        !(builtInThemeIds.contains(id) || purchasedIds.contains(id))
+                    }
+                    ThemeItem(
+                        themeId = id,
+                        title = label,
+                        isLocked = isLocked,
                         modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth()
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            themes.forEach { (label, id) ->
-                                DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = {
-                                        AppSettings.saveTheme(context, id)
-                                        themeState.value = id
-                                        expanded = false
+                            .height(90.dp)
+                            .padding(4.dp),
+
+                        onClick = { selectedId ->
+                            if (!isLocked) {
+                                if (currentAccount != null) {
+                                    currentAccount.selectedThemeId = selectedId
+                                    val ok = AccountStorage.updateAccount(
+                                        context,
+                                        currentAccount
+                                    )
+                                    if (ok) {
+                                        themeState.value = selectedId
+                                        onAccountRefresh?.invoke(currentAccount)
+                                        Toast.makeText(
+                                            context,
+                                            "Tema aplicado",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Error al guardar el tema",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     }
-                                )
+                                } else {
+                                    AppSettings.saveTheme(context, selectedId)
+                                    themeState.value = selectedId
+                                    Toast.makeText(
+                                        context,
+                                        "Tema aplicado",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+
                             }
                         }
-                    }
+                    )
                 }
-                Spacer(modifier = Modifier.height(10.dp))
+                }
                 Button(
                     onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.End)
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(top = 10.dp)
                 ) {
                     Text("Cerrar")
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
+fun ThemeItem(
+    themeId: Int,
+    title: String,
+    isLocked: Boolean,
+    onClick: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(26.dp)
+                .clip(RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp))
+                .background(MaterialTheme.colorScheme.primary), contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onPrimary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .clip(RoundedCornerShape(bottomStart = 12.dp, bottomEnd = 12.dp))
+                .background(MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier
+                    .clickable(enabled = !isLocked) { onClick(themeId) }
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp, horizontal = 4.dp)
+                    .wrapContentHeight()
+            ) {
+                ThemeDiagonalCirclePreview(
+                    themeId = themeId,
+                    modifier = Modifier.size(52.dp)
+                )
+            }
+
+            if (isLocked) {
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.32f))
+                        .clip(
+                            RoundedCornerShape(
+                                bottomStart = 12.dp,
+                                bottomEnd = 12.dp
+                            )
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Lock,
+                        contentDescription = "Bloqueado",
+                        tint = MaterialTheme.colorScheme.onPrimary
+                    )
                 }
             }
         }
