@@ -1964,6 +1964,7 @@ fun UserManualDialog(
         R.drawable.logo,
         R.drawable.manual_cuenta,
         R.drawable.manual_agregar_tarea,
+        R.drawable.manual_visualizar_tarea,
         R.drawable.manual_recordatorio,
         R.drawable.manual_tienda,
         R.drawable.manual_configuracion,
@@ -1984,7 +1985,7 @@ fun UserManualDialog(
                     painter = painterResource(id = currentImage),
                     contentDescription = null,
                     modifier = Modifier
-                        .size(180.dp)
+                        .size(300.dp)
                         .clip(RoundedCornerShape(16.dp))
                 )
                 Text(
