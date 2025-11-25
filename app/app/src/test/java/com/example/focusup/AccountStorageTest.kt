@@ -244,5 +244,55 @@ class AccountStorageTest {
         println("Paso la verificacion de descompletar tarea en cuenta")
         println("Descompletar tarea en cuenta completada correctamente")
         println()
+        
+         // getNextTaskIdForAccount
+    @Test
+    fun testGetNextTaskIdForAccount() {
+        AccountStorage.saveAccounts(context, listOf(account1))
+        println("Probando obtencion del siguiente ID de tarea para una cuenta...")
+
+        var nextTaskId = AccountStorage.getNextTaskIdForAccount(context, account1.id)
+        assertEquals(1, nextTaskId)
+        println("Paso la verificacion cuando no hay tareas (ID = 1)")
+
+        AccountStorage.addTaskToAccount(context, account1.id, task1, account1.isPremium)
+        nextTaskId = AccountStorage.getNextTaskIdForAccount(context, account1.id)
+        assertEquals(2, nextTaskId)
+        println("Paso la verificacion de siguiente ID despues de agregar tarea (ID = 2)")
+
+        AccountStorage.addTaskToAccount(context, account1.id, task2, account1.isPremium)
+        nextTaskId = AccountStorage.getNextTaskIdForAccount(context, account1.id)
+        assertEquals(3, nextTaskId)
+        println("Paso la verificacion de ID consecutivo (ID = 3)")
+
+        println("Obtencion del siguiente ID de tarea completado correctamente")
+        println()
+    }
+
+    // getTasksForAccount
+    @Test
+    fun testGetTasksForAccount() {
+        AccountStorage.saveAccounts(context, listOf(account1))
+        println("Probando obtencion de tareas de una cuenta...")
+
+        var tasks = AccountStorage.getTasksForAccount(context, account1.id)
+        assertTrue(tasks.isEmpty())
+        println("Paso la verificacion cuando no hay tareas (lista vacia)")
+
+        AccountStorage.addTaskToAccount(context, account1.id, task1, account1.isPremium)
+        AccountStorage.addTaskToAccount(context, account1.id, task2, account1.isPremium)
+
+        tasks = AccountStorage.getTasksForAccount(context, account1.id)
+        assertEquals(2, tasks.size)
+        println("Paso la verificacion de cantidad de tareas (2 tareas)")
+
+        val titles = tasks.map { it.title }
+        assertTrue(titles.contains("Examen 1"))
+        assertTrue(titles.contains("Proyecto Final"))
+        println("Paso la verificacion de titulos de tareas")
+
+        println("Obtencion de tareas de la cuenta completada correctamente")
+        println()
     }
 }
+  
