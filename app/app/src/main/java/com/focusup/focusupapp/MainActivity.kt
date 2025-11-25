@@ -117,6 +117,9 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.ui.text.style.TextDecoration
 import com.focusup.focusupapp.model.Step
 
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+
+
 // Crear canal de notificacion
 @RequiresApi(Build.VERSION_CODES.O)
 private fun createNotificationChannel(context: Context) {
@@ -1500,9 +1503,11 @@ fun AddAccountDialog(
                     colors = commonOutlinedColors()
                 )
 
-                OutlinedTextField(
+                 OutlinedTextField(
                     value = accountEmail,
-                    onValueChange = { accountEmail = it },
+                    onValueChange = { 
+                        accountEmail = it.replace("\\s".toRegex(), "") // eliminando espacios del email
+                    },
                     label = { Text("Email", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth(),
                     colors = commonOutlinedColors()
@@ -1534,6 +1539,7 @@ fun AddAccountDialog(
                     onValueChange = { accountPassword = it },
                     label = { Text("Contraseña", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(), // Ocultando contraseña
                     colors = commonOutlinedColors()
                 )
                 if (passwordErrorEmpty) {
@@ -1549,6 +1555,7 @@ fun AddAccountDialog(
                     onValueChange = { accountConfirmPassword = it },
                     label = { Text("Confirmar contraseña", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(), // Ocultando contraseña
                     colors = commonOutlinedColors()
                 )
                 if (confirmPasswordErrorMismatch) {
@@ -1678,9 +1685,12 @@ fun LoginDialog(
                 var passwordError by remember { mutableStateOf(false) }
                 var loginError by remember { mutableStateOf(false) }
 
+                // Campo de email
                 OutlinedTextField(
                     value = accountEmail,
-                    onValueChange = { accountEmail = it },
+                    onValueChange = { 
+                        accountEmail = it.replace("\\s".toRegex(), "") // eliminando espacios del email
+                    },
                     label = { Text("Email", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth(),
                     isError = emailError || loginError
@@ -1693,11 +1703,13 @@ fun LoginDialog(
                     )
                 }
 
+                // Campo de contraseña
                 OutlinedTextField(
                     value = accountPassword,
                     onValueChange = { accountPassword = it },
                     label = { Text("Contraseña", color = MaterialTheme.colorScheme.onBackground) },
                     modifier = Modifier.fillMaxWidth(),
+                    visualTransformation = PasswordVisualTransformation(), // ocultando contraseña
                     isError = passwordError || loginError
                 )
                 if (passwordError) {
