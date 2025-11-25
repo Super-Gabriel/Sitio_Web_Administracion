@@ -10,8 +10,19 @@ object ThemeIds {
     const val OCEAN = 6
     const val GREEN = 7
     const val YELLOW = 8
-    const val PURPLE = 9
-    const val ORANGE = 10
-    const val PANDA = 11
-    const val RAINBOW = 12
+    const val RED = 9
+    const val PURPLE = 10
+    const val ORANGE = 11
+    const val PANDA = 12
+    const val RAINBOW = 13
+
+    const val VOLCANO = 14
+
+    const val GALAXY = 15
+
+    const val VAMPIRE = 16
+
+    const val CAKE = 17
+
+    const val WATERMELON = 18
 }

@@ -4,71 +4,132 @@ import androidx.compose.ui.graphics.Color
 
 
 val rewardThemeColors: Map<Int, List<Color>> = mapOf(
-    5 to listOf(// Pink
+
+    ThemeIds.LIGHT1 to listOf(
+        LightBlue,
+        BlueGray,
+        LightYellow,
+        Blue1,
+    ),
+
+    ThemeIds.DARK1 to listOf(
+        LightBlack,
+        DarkBlueGray,
+        DarkGray,
+        Blue2,
+    ),
+
+    ThemeIds.LIGHT2 to listOf(
+        GreenBlue,
+        LightBlueGray,
+        Purple,
+        LightCream,
+    ),
+
+    ThemeIds.DARK2 to listOf(
+        DarkGreen2,
+        DarkGreen3,
+        Black,
+        DarkGreen4,
+    ),
+
+    ThemeIds.PINK to listOf(
         DarkPink2,
         LightPink3,
-        LightPink2,
-        Pink,
         LightPink1,
-
+        Pink,
     ),
 
-    6 to listOf(// Ocean
+    ThemeIds.OCEAN to listOf(
         DarkBlue2,
-        White,
         Blue3,
-        DarkBlue6,
+        LightBlue4,
         DarkBlue4,
-        LightBlue4
     ),
-    7 to listOf( // Green
+
+
+    ThemeIds.RED to listOf(
+        DarkRed2,
+        LightRed4,
+        LightRed2,
+        DarkRed3,
+    ),
+
+    ThemeIds.GREEN to listOf(
         DarkGreen2,
-        White,
         LightGreen1,
-        LightGreen1,
-        DarkGreen1,
         LightGreen2,
-        DarkGreen4
-    ),
-    8 to listOf( // Yellow
+        DarkGreen1,
+
+        ),
+
+    ThemeIds.YELLOW to listOf(
         Yellow6,
-        Yellow4,
         LightYellow3,
         LightYellow4,
         LightYellow1,
-        White,
-    ),
-    9 to listOf( // Purple
-        DarkPurple2,
-        White,
-        LightPurple1,
-        DarkPurple1,
-        LightPurple2,
-
 
         ),
-    10 to listOf( // Orange
+    ThemeIds.PURPLE to listOf(
+        DarkPurple2,
+        LightPurple1,
+        LightPurple2,
+        DarkPurple1,
+    ),
+
+    ThemeIds.ORANGE to listOf(
         DarkOrange1,
-        White,
         LightOrange2,
-        MediumOrange2,
-        Orange1,
         LightOrange5,
+        Orange1,
     ),
-    11 to listOf( // Panda
+
+    ThemeIds.PANDA to listOf(
         DarkGray2,
+        SoftGray2,
         White,
-        SoftGray1,
         DarkGray1,
-        White,
-        Black
     ),
-    12 to listOf( // Rainbow
-        PastelLightBlue1,
+
+    ThemeIds.RAINBOW to listOf(
         PastelPurple1,
+        PastelGreen1,
         PastelYellow1,
         PastelRed1,
-        PastelGreen1,
+    ),
 
+    ThemeIds.VOLCANO to listOf(
+        DarkRed4,
+        Orange2,
+        DarkGray3,
+        Orange3,
+
+        ),
+    ThemeIds.GALAXY to listOf(
+        Black,
+        Purple1,
+        DarkBlue3,
+        SpaceBlue
+    ),
+
+    ThemeIds.VAMPIRE to listOf(
+        GrayBlueGreen,
+        RedBlood,
+        Wine,
+        DarkGray3
+    ),
+
+    ThemeIds.CAKE to listOf(
+        PinkCake,
+        GreenCake,
+        White,
+        YellowCake,
+    ),
+
+    ThemeIds.WATERMELON to listOf(
+        DarkGreen,
+        Red5,
+        Red4,
+        Black,
     )
 )

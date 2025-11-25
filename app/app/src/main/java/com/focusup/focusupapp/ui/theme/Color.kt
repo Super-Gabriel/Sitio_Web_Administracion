@@ -37,8 +37,11 @@ val DarkGreen3 = Color(0xFF081C15)
 val DarkGreen4 = Color(0xFF2D6A4F)
 val DarkGray = Color(0xFF424244)
 val DarkYellow = Color(0xFFC5AF2D)
+val Yellow7 = Color(0xFFFFED47)
+
+val DarkBlue5 = Color(0xFF1D3765)
+
 val DarkBlueGray = Color(0xFF4F6A8F)
-val DarkBlue = Color(0xFF023047)
 
 
 val LightPink1 = Color(0xFFE17BA0)
@@ -61,10 +64,22 @@ val DarkBlue1 = Color(0xFF303F9F)
 val DarkBlue2 = Color(0xFF0C1650)
 val DarkBlue4 = Color(0xFF050E38)
 
-val LightRed1 = Color(0xFFFD4F4F)
-val LightRed2 = Color(0xFFFF5252)
+
 val LightRed3 = Color(0xFFFF4658)
 val DarkRed1 = Color(0xFFA62D2D)
+
+val LightRed1 = Color(0xFFFF6262)
+val LightRed2 = Color(0xFFBE1D1D)
+val DarkRed2 = Color(0xFF8A1212)
+val DarkRed3 = Color(0xFF800909)
+
+val DarkOrange2 = Color(0xFF8C1D09)
+val DarkRed4 = Color(0xFF7A1209)
+
+val Orange2 = Color(0xFFBE280D)
+
+val LightRed4 = Color(0xFFA11818)
+val DarkGray3 = Color(0xFF111111)
 
 
 val LightGreen1 = Color(0xFF81C784)
@@ -102,6 +117,7 @@ val LightOrange2 = Color(0xFFFFAE63)
 val Orange1 = Color(0xFFFF5900)
 val DarkOrange1 = Color(0xFFF57C00)
 val LightOrange4 = Color(0xFFFFB380)
+val Orange3 = Color(0xFFFF9800)
 val LightOrange5 = Color(0xFFFF993C)
 val MediumOrange2 = Color(0xFFFF8C42)
 
@@ -110,13 +126,45 @@ val SoftGray2 = Color(0xFFB2B2B2)
 val DarkGray1 = Color(0xFF424242)
 val DarkGray2 = Color(0xFF171616)
 
-val PastelRed1 = Color(0xFFFF9A8B)
-val PastelOrange1 = Color(0xFFFFB680)
-val PastelYellow1 = Color(0xFFFFF59D)
-val PastelGreen1 = Color(0xFFCCFF98)
-val PastelLightBlue1 = Color(0xFFB0E9FF)
-val PastelPurple1 = Color(0xFFA078D5)
-val PastelDarkBlue1 = Color(0xFF3B55AD)
+val PastelRed1 = Color(0xFFFFAAAA)
+val PastelOrange1 = Color(0xFFFDC580)
+val PastelYellow1 = Color(0xFFFFFBBB)
+val PastelGreen1 = Color(0xFFC9FFDF)
+val PastelPurple1 = Color(0xFFBC7EEA)
+val PastelDarkBluePurple1 = Color(0xFF3A2260)
+
+val Purple1 = Color(0xFF684875)
+
+
+val DarkBlue3 = Color(0xFF0B1125)
+
+
+val SpaceBlue = Color(0xFF7ACDD9)
+
+
+val DarkBlueGreen = Color(0xFF1F3632)
+val Wine = Color(0xFF360712)
+
+val YellowCake = Color(0xFFFFF593)
+
+val GreenCake = Color(0xFFBEFFE2)
+
+
+val DarkBlue = Color(0xFF2C2C64)
+
+
+val GrayBlueGreen = Color(0xFF152523)
+
+val RedBlood = Color(0xFF721F1F)
+
+val PinkCake = Color(0xFFFFAAE7)
+
+
+
+val Red4 = Color(0xFFEC2626)
+
+val Red5 = Color(0xFFE06969)
+
 
 
 val SpecialRed = Color(0xFFFDA0AA)
