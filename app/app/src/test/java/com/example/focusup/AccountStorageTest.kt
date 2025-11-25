@@ -183,10 +183,6 @@ class AccountStorageTest {
 
     // removeStepFromTaskInAccount
 
-    // getNextTaskIdForAccount
-
-    // getTasksForAccount
-
     // updateAccount
 
     // getAccountById
@@ -244,8 +240,9 @@ class AccountStorageTest {
         println("Paso la verificacion de descompletar tarea en cuenta")
         println("Descompletar tarea en cuenta completada correctamente")
         println()
+    }
         
-         // getNextTaskIdForAccount
+    // getNextTaskIdForAccount
     @Test
     fun testGetNextTaskIdForAccount() {
         AccountStorage.saveAccounts(context, listOf(account1))
