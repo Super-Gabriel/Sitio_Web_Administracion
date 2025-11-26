@@ -149,10 +149,67 @@ class AccountStorageTest {
     }
 
     // addPointsToAccount
+    @Test
+    fun testAddPointsToAccount() {
+
+        AccountStorage.saveAccounts(context, listOf(account1))
+        println("Probando agregar puntos a la cuenta...")
+
+        val result = AccountStorage.addPointsToAccount(context, account1.id, account1.points )
+        assertNotNull(result)
+        assertEquals(0, result!!.points)
+        println("Paso la verificacion de puntos devueltos")
+
+        val loaded = AccountStorage.loadAccounts(context)
+        val loadedAccount = loaded.find { it.id == account1.id }
+        assertNotNull(loadedAccount)
+        assertEquals(0, loadedAccount!!.points)
+        println("Paso la verificacion de persistencia de puntos")
+
+        val resultNull = AccountStorage.addPointsToAccount(context, 4, 10)
+        assertNull(resultNull)
+        println("Paso la verificacion al intentar agregar puntos a cuenta inexistente")
+        println("addPointsToAccount completado correctamente")
+        println()
+    }
 
     // purchaseReward
+    @Test
+    fun testPurchaseReward() {
+        AccountStorage.saveAccounts(context, listOf(account1, account2))
+        println("Probando compra de recompensa...")
 
-    // addTaskToAccount
+        val rewardId = 10
+        val cost = 30
+        val purchaseResult = AccountStorage.purchaseReward(context, account2.id, rewardId, cost)
+
+        assertNotNull(purchaseResult)
+        assertEquals(70, purchaseResult!!.points)
+        assertTrue(purchaseResult.purchasedRewards.contains(rewardId))
+        println("Paso la verificacion de compra exitosa y resta de puntos")
+
+        val loaded = AccountStorage.loadAccounts(context)
+        val loadedAccount2 = loaded.find { it.id == account2.id }
+        assertNotNull(loadedAccount2)
+        assertEquals(70, loadedAccount2!!.points)
+        assertTrue(loadedAccount2.purchasedRewards.contains(rewardId))
+        println("Paso la verificacion de persistencia de compra")
+
+        val failResult = AccountStorage.purchaseReward(context, account1.id, 16, 50)
+        assertNull(failResult)
+        println("Paso la verificacion de intento de compra con puntos insuficientes")
+
+        val loadedAccount1 = AccountStorage.loadAccounts(context).find { it.id == account1.id }
+        assertNotNull(loadedAccount1)
+        assertFalse(loadedAccount1!!.purchasedRewards.contains(16))
+        println("Paso la verificacion de que no se persiste compra fallida")
+
+        println("purchaseReward completado correctamente")
+        println()
+
+    }
+
+            // addTaskToAccount
     @Test
     fun testAddTaskToAccount() {
         AccountStorage.saveAccounts(context, listOf(account1))
