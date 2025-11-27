@@ -815,6 +815,7 @@ fun CalendarScreen(context: Context) {
                             horizontalArrangement = Arrangement.spacedBy(12.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            if (selectedTask?.isCompleted == false) {
                             TextButton(
                                 onClick = { showTaskDialog = false
                                     taskToEdit = selectedTask },
@@ -823,6 +824,7 @@ fun CalendarScreen(context: Context) {
                                 contentColor = MaterialTheme.colorScheme.onSecondary
                             )) {
                                 Text("Editar")
+                            }
                             }
 
                         Button(
@@ -1549,8 +1551,8 @@ fun EditTaskDialog(
             var taskDueTime by remember { mutableStateOf(task.dueTime) }
             var selectedDifficulty by remember { mutableStateOf(task.difficulty) }
             var expanded by remember { mutableStateOf(false) }
-            var taskSteps = remember { mutableStateListOf<String>().apply {
-                addAll(task.steps.map { it.text })
+            var taskSteps = remember { mutableStateListOf<Step>().apply {
+                addAll(task.steps.map { it.copy() })
             } }
 
             val context = LocalContext.current
@@ -1673,8 +1675,9 @@ fun EditTaskDialog(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         OutlinedTextField(
-                            value = step,
-                            onValueChange = { taskSteps[index] = it },
+                            value = step.text,
+                            onValueChange = { newText ->
+                                taskSteps[index] = step.copy(text = newText) },
                             modifier = Modifier.weight(1f),
                             label = { Text("Paso ${index + 1}",color = MaterialTheme.colorScheme.onBackground) },
 
@@ -1686,7 +1689,7 @@ fun EditTaskDialog(
                     }
                 }
 
-                Button(onClick = { taskSteps.add("") }) {
+                Button(onClick = { taskSteps.add(Step("") )}) {
                     Text("Agregar paso",)
                 }
 
@@ -1707,7 +1710,7 @@ fun EditTaskDialog(
                                 dueDate = taskDueDate,
                                 dueTime = taskDueTime,
                                 difficulty = selectedDifficulty,
-                                steps = convertStringsToSteps(taskSteps),
+                                steps = taskSteps.toMutableList()
                             )
                         )
                     },
