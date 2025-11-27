@@ -267,6 +267,7 @@ fun CalendarScreen(context: Context) {
     var showTaskDialog by remember { mutableStateOf(false) }
     var selectedTask by remember { mutableStateOf<Task?>(null) }
     var showTaskCompletedDialog by remember { mutableStateOf(false) }
+    var taskToEdit by remember { mutableStateOf<Task?>(null) }
 
     var showAddTaskDialog by remember { mutableStateOf(false) }
     var showTaskCreatedDialog by remember { mutableStateOf(false) }
@@ -810,6 +811,20 @@ fun CalendarScreen(context: Context) {
                         }
                     },
                     dismissButton = {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            TextButton(
+                                onClick = { showTaskDialog = false
+                                    taskToEdit = selectedTask },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = GetTaskColorText(selectedTask!!.difficulty, selectedTask!!.isCompleted),
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            )) {
+                                Text("Editar")
+                            }
+
                         Button(
                             onClick = { showTaskDialog = false },
                             colors = ButtonDefaults.buttonColors(
@@ -818,6 +833,7 @@ fun CalendarScreen(context: Context) {
                             )
                         ) {
                             Text("Cerrar")
+                        }
                         }
                     },
                     containerColor = GetTaskColor(selectedTask!!.difficulty, selectedTask!!.isCompleted)
@@ -1008,6 +1024,22 @@ fun CalendarScreen(context: Context) {
                 Button(onClick = { showLoginForStore = false }) {
                     Text("Cancelar")
                 }
+            }
+        )
+    }
+
+    taskToEdit?.let { task ->
+        EditTaskDialog(
+            task = task,
+            onDismiss = { taskToEdit = null },
+            onSave = { updatedTask ->
+                if (currentAccount != null) {
+                    AccountStorage.updateTaskOfAccount(context, currentAccount!!.id, updatedTask)
+                    val updatedTasks = AccountStorage.getTasksForAccount(context, currentAccount!!.id)
+                    tasksList.clear()
+                    tasksList.addAll(updatedTasks)
+                }
+                taskToEdit = null
             }
         )
     }
@@ -1439,7 +1471,8 @@ fun AddTaskDialog(
                                     taskSteps[index] = newValue
                                 },
                                 label = { Text("Paso ${index + 1}", color = MaterialTheme.colorScheme.onBackground) },
-                                modifier = Modifier.weight(1f)
+                                modifier = Modifier.weight(1f),
+                                colors = commonOutlinedColors()
                             )
 
                             IconButton(onClick = { taskSteps.removeAt(index) }) {
@@ -1483,6 +1516,205 @@ fun AddTaskDialog(
                         }
                     ) {
                         Text("Agregar tarea")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditTaskDialog(
+    task: Task,
+    onDismiss: () -> Unit,
+    onSave: (Task) -> Unit
+) {
+
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            tonalElevation = 4.dp,
+            color = MaterialTheme.colorScheme.background,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight(0.9f)
+                .padding(16.dp)
+        ) {
+
+            var taskName by remember { mutableStateOf(task.title) }
+            var taskDescription by remember { mutableStateOf(task.description) }
+            var taskDueDate by remember { mutableStateOf(task.dueDate) }
+            var taskDueTime by remember { mutableStateOf(task.dueTime) }
+            var selectedDifficulty by remember { mutableStateOf(task.difficulty) }
+            var expanded by remember { mutableStateOf(false) }
+            var taskSteps = remember { mutableStateListOf<String>().apply {
+                addAll(task.steps.map { it.text })
+            } }
+
+            val context = LocalContext.current
+
+
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+
+                Text("Editar Tarea", style = MaterialTheme.typography.titleLarge)
+
+                OutlinedTextField(
+                    value = taskName,
+                    onValueChange = { taskName = it },
+                    label = { Text("Nombre de la tarea", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = commonOutlinedColors()
+                )
+
+                OutlinedTextField(
+                    value = taskDescription,
+                    onValueChange = { taskDescription = it },
+                    label = { Text("Descripción", color = MaterialTheme.colorScheme.onBackground) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = commonOutlinedColors()
+                )
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = taskDueDate.format(dateFormatter),
+                        onValueChange = {},
+                        label = { Text("Fecha de entrega", color = MaterialTheme.colorScheme.onBackground) },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        colors = commonOutlinedColors()
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable {
+                                DatePickerDialog(
+                                    context,
+                                    { _, year, month, dayOfMonth ->
+                                        taskDueDate = LocalDate.of(year, month + 1, dayOfMonth)
+                                    },
+                                    taskDueDate.year,
+                                    taskDueDate.monthValue - 1,
+                                    taskDueDate.dayOfMonth
+                                ).show()
+                            }
+                    )
+                }
+
+
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    OutlinedTextField(
+                        value = taskDueTime.format(timeFormatter),
+                        onValueChange = {},
+                        label = { Text("Hora de entrega", color = MaterialTheme.colorScheme.onBackground) },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        colors = commonOutlinedColors()
+                    )
+
+                    Box(
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clickable {
+                                TimePickerDialog(
+                                    context,
+                                    { _, hour, minute ->
+                                        taskDueTime = LocalTime.of(hour, minute)
+                                    },
+                                    taskDueTime.hour,
+                                    taskDueTime.minute,
+                                    true
+                                ).show()
+                            }
+                    )
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text("Dificultad:")
+
+                    Box {
+                        Button(onClick = { expanded = true }) {
+                            Text(selectedDifficulty.toString())
+                        }
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            (1..5).forEach { level ->
+                                DropdownMenuItem(
+                                    text = { Text(level.toString()) },
+                                    onClick = {
+                                        selectedDifficulty = level
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Text("Pasos")
+
+                taskSteps.forEachIndexed { index, step ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = step,
+                            onValueChange = { taskSteps[index] = it },
+                            modifier = Modifier.weight(1f),
+                            label = { Text("Paso ${index + 1}",color = MaterialTheme.colorScheme.onBackground) },
+
+                        )
+
+                        IconButton(onClick = { taskSteps.removeAt(index) }) {
+                            Icon(Icons.Default.Close, contentDescription = null)
+                        }
+                    }
+                }
+
+                Button(onClick = { taskSteps.add("") }) {
+                    Text("Agregar paso",)
+                }
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.End))
+
+                {
+                    Button(onClick = onDismiss) {
+                        Text("Cancelar")
+                    }
+
+                    Button(onClick = { onSave(task.copy(
+                                title = taskName,
+                                description = taskDescription,
+                                dueDate = taskDueDate,
+                                dueTime = taskDueTime,
+                                difficulty = selectedDifficulty,
+                                steps = convertStringsToSteps(taskSteps),
+                            )
+                        )
+                    },
+                        modifier = Modifier.wrapContentWidth()
+
+                    ) {
+                        Text("Guardar cambios",fontSize = 12.sp, maxLines = 1)
                     }
                 }
             }
