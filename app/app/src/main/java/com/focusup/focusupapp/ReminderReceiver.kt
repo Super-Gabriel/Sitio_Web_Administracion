@@ -20,9 +20,8 @@ class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         // Cargar la sesión activa para obtener la cuenta actual
         val currentAccount = SessionStorage.loadSession(context)
-        
+        // Cargar tareas de la cuenta activa
         val tasks: List<Task> = if (currentAccount != null) {
-            // Cargar tareas de la cuenta activa
             AccountStorage.getTasksForAccount(context, currentAccount.id)
         } else {
             emptyList()
@@ -30,7 +29,7 @@ class ReminderReceiver : BroadcastReceiver() {
 
         // Buscar la tarea mas proxima
         val now = LocalDate.now()
-        val upcomingTasks = tasks.filter { it.dueDate >= now }
+        val upcomingTasks = tasks.filter { it.dueDate >= now && !it.isCompleted }
         val nextTask = upcomingTasks.minWithOrNull(compareBy<Task> { it.dueDate })
 
         // Buscar la tarea mas dificil
