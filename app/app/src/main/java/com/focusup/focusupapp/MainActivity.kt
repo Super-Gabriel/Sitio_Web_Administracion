@@ -99,6 +99,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.focusup.focusupapp.storage.TutorialPreferences
 import com.focusup.focusupapp.storage.SessionStorage
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -538,9 +539,14 @@ fun CalendarScreen(context: Context) {
             ) {
                 items(daysGrid) { date ->
                     if (date != null) {
+                        val isToday = date == today
                         Card(
-                            modifier = Modifier.height(100.dp),
-                            shape = RoundedCornerShape(15.dp),
+                            modifier = Modifier.height(100.dp)
+                            .border(
+                            shape = RoundedCornerShape(10.dp),
+                        width = if (isToday) 3.dp else 0.dp,
+                        color = if (isToday) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent,
+                        ),
                             elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surface
