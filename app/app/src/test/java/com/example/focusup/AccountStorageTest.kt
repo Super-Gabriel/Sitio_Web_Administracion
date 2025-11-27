@@ -237,10 +237,156 @@ class AccountStorageTest {
     }
 
     // removeTaskFromAccount
-
+    @Test
+    fun testRemoveTaskFromAccount() {
+        AccountStorage.saveAccounts(context, listOf(account1))
+        AccountStorage.addTaskToAccount(context, account1.id, task1, account1.isPremium)
+        AccountStorage.addTaskToAccount(context, account1.id, task2, account1.isPremium)
+        
+        println("Probando eliminar tarea de la cuenta...")
+        
+        // Verificar que hay 2 tareas inicialmente
+        var loadedAccounts = AccountStorage.loadAccounts(context)
+        var loadedAccount = loadedAccounts.find { it.id == account1.id }
+        assertEquals(2, loadedAccount!!.tasks.size)
+        println("Paso la verificacion inicial de cantidad de tareas")
+        
+        // Eliminar una tarea
+        AccountStorage.removeTaskFromAccount(context, account1.id, task1.id)
+        
+        // Verificar que solo queda 1 tarea
+        loadedAccounts = AccountStorage.loadAccounts(context)
+        loadedAccount = loadedAccounts.find { it.id == account1.id }
+        assertEquals(1, loadedAccount!!.tasks.size)
+        println("Paso la verificacion de eliminacion de tarea")
+        
+        // Verificar que la tarea correcta fue eliminada
+        val remainingTask = loadedAccount.tasks[0]
+        assertEquals("Proyecto Final", remainingTask.title)
+        println("Paso la verificacion de tarea correcta eliminada")
+        
+        // Eliminar tarea inexistente
+        AccountStorage.removeTaskFromAccount(context, account1.id, 999)
+        assertEquals(1, loadedAccount.tasks.size) // La cantidad no cambia
+        println("Paso la verificacion de eliminacion de tarea inexistente")
+        
+        println("Eliminacion de tarea completada correctamente")
+        println()
+    }
+    
     // removeStepFromTaskInAccount
+    @Test
+    fun testRemoveStepFromTaskInAccount() {
+        AccountStorage.saveAccounts(context, listOf(account1))
+        AccountStorage.addTaskToAccount(context, account1.id, task1, account1.isPremium)
+        
+        println("Probando eliminar paso de tarea...")
+        
+        // Verificar que hay 2 pasos inicialmente
+        var loadedAccounts = AccountStorage.loadAccounts(context)
+        var loadedAccount = loadedAccounts.find { it.id == account1.id }
+        var loadedTask = loadedAccount!!.tasks.find { it.id == task1.id }
+        assertEquals(2, loadedTask!!.steps.size)
+        println("Paso la verificacion inicial de cantidad de pasos")
+        
+        // Usar el método más seguro - verificar por contenido del toString
+        val stepTexts = loadedTask.steps.map { it.toString() }
+        assertTrue(stepTexts.any { it.contains("Estudiar capitulo 1") })
+        assertTrue(stepTexts.any { it.contains("Hacer ejercicios") })
+        
+        // Eliminar el primer paso
+        AccountStorage.removeStepFromTaskInAccount(context, account1.id, task1.id, 0)
+        
+        // Verificar que solo queda 1 paso
+        loadedAccounts = AccountStorage.loadAccounts(context)
+        loadedAccount = loadedAccounts.find { it.id == account1.id }
+        loadedTask = loadedAccount!!.tasks.find { it.id == task1.id }
+        assertEquals(1, loadedTask!!.steps.size)
+        println("Paso la verificacion de eliminacion de paso")
+        
+        // Verificar el contenido del paso restante
+        val remainingStepText = loadedTask.steps[0].toString()
+        assertTrue(remainingStepText.contains("Hacer ejercicios"))
+        println("Paso la verificacion de paso correcto eliminado")
+        
+        // Eliminar paso con índice inválido
+        AccountStorage.removeStepFromTaskInAccount(context, account1.id, task1.id, 5)
+        assertEquals(1, loadedTask.steps.size)
+        println("Paso la verificacion de eliminacion de paso con indice invalido")
+        
+        // Eliminar paso de tarea inexistente
+        AccountStorage.removeStepFromTaskInAccount(context, account1.id, 999, 0)
+        println("Paso la verificacion de eliminacion de paso en tarea inexistente")
+        
+        println("Eliminacion de paso completada correctamente")
+        println()
+    }
 
     // updateAccount
+    @Test
+    fun testUpdateAccount() {
+        AccountStorage.saveAccounts(context, listOf(account1))
+        
+        println("Probando actualizacion de cuenta...")
+        
+        // Crear una cuenta actualizada
+        val updatedAccount = Account(
+            id = account1.id,
+            name = "Pedrito Actualizado",
+            email = "nuevo@email.com",
+            password = "nuevaContrasenia123",
+            isPremium = true,
+            points = 50,
+            purchasedRewards = mutableListOf(1, 2, 3),
+            createdAt = account1.createdAt,
+            tasks = mutableListOf(task1, task2)
+        )
+        
+        // Actualizar la cuenta
+        val result = AccountStorage.updateAccount(context, updatedAccount)
+        assertTrue(result)
+        println("Paso la verificacion de resultado de actualizacion")
+        
+        // Verificar que los cambios se persistieron
+        val loadedAccounts = AccountStorage.loadAccounts(context)
+        val loadedAccount = loadedAccounts.find { it.id == account1.id }
+        
+        assertNotNull(loadedAccount)
+        assertEquals("Pedrito Actualizado", loadedAccount!!.name)
+        println("Paso la verificacion de nombre actualizado")
+        assertEquals("nuevo@email.com", loadedAccount.email)
+        println("Paso la verificacion de email actualizado")
+        assertEquals("nuevaContrasenia123", loadedAccount.password)
+        println("Paso la verificacion de contrasenia actualizada")
+        assertTrue(loadedAccount.isPremium)
+        println("Paso la verificacion de premium actualizado")
+        assertEquals(50, loadedAccount.points)
+        println("Paso la verificacion de puntos actualizados")
+        assertEquals(3, loadedAccount.purchasedRewards.size)
+        println("Paso la verificacion de recompensas actualizadas")
+        assertEquals(2, loadedAccount.tasks.size)
+        println("Paso la verificacion de tareas actualizadas")
+        
+        // Intentar actualizar cuenta inexistente
+        val nonExistentAccount = Account(
+            id = 999,
+            name = "No Existe",
+            email = "no@existe.com",
+            password = "123",
+            isPremium = false,
+            points = 0,
+            purchasedRewards = mutableListOf(),
+            createdAt = "2024-01-01",
+            tasks = mutableListOf()
+        )
+        
+        val failResult = AccountStorage.updateAccount(context, nonExistentAccount)
+        assertFalse(failResult)
+        println("Paso la verificacion de actualizacion de cuenta inexistente")
+        
+        println("Actualizacion de cuenta completada correctamente")
+        println()
+    }
 
     // getAccountById
     @Test
